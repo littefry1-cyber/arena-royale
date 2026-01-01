@@ -1,0 +1,87 @@
+{
+  "id": "3604fd04-e643-4c51-865f-e369856e8653",
+  "username": "hypersniper",
+  "password_hash": "$2b$12$QyCe8etkauCwGhDe0k89p.tA1Uj6EyKPby7tNBPLPF.hwb2Kkn/Q2",
+  "is_guest": false,
+  "admin": false,
+  "created_at": 1767231126.549251,
+  "updated_at": 1767298485.651991,
+  "last_login": 1767231126.549251,
+  "profile": {
+    "name": "hypersniper",
+    "title": "rookie",
+    "tower_skin": "default"
+  },
+  "stats": {
+    "trophies": 1,
+    "elo": 1000,
+    "wins": 2,
+    "losses": 0,
+    "crowns": 6,
+    "max_streak": 1,
+    "current_streak": 0,
+    "medals": 0,
+    "medals_wins": 0,
+    "medals_losses": 0,
+    "medals_highest": 0,
+    "comp_wins": 0,
+    "comp_losses": 0,
+    "comp_trophies": 0
+  },
+  "resources": {
+    "gold": 6,
+    "gems": 6,
+    "crystals": 0,
+    "star_points": 30
+  },
+  "cards": {
+    "unlocked": [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    "levels": {},
+    "shards": {}
+  },
+  "decks": [
+    [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "current_deck": -1,
+  "clan_id": null,
+  "chests": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "battle_pass": {
+    "level": 1,
+    "xp": 0,
+    "premium": false,
+    "claimed": []
+  },
+  "trophy_road": {
+    "claimed": []
+  },
+  "battle_log": [],
+  "gold": 125,
+  "banned": false
+}

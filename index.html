@@ -2,15 +2,22 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=2.0, user-scalable=yes, viewport-fit=cover">
   <title>Arena Royale 2.4.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
   <style>
     *{margin:0;padding:0;box-sizing:border-box}
     html,body{height:100%;overflow:hidden}
-    :root{--gold:#f5a623;--gold-dark:#c7850f;--purple:#8e44ad;--blue:#3498db;--red:#e74c3c;--green:#2ecc71;--cyan:#00bcd4}
-    body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#0d1b2a,#1b2838,#0d1b2a);color:#fff;touch-action:none;user-select:none;position:fixed;inset:0;zoom:1.75}
-    .app{height:100%;display:flex;flex-direction:column}
+    :root{--gold:#f5a623;--gold-dark:#c7850f;--purple:#8e44ad;--blue:#3498db;--red:#e74c3c;--green:#2ecc71;--cyan:#00bcd4;--app-scale:1}
+    body{font-family:'Nunito',sans-serif;background:linear-gradient(180deg,#0d1b2a,#1b2838,#0d1b2a);color:#fff;touch-action:pan-y;user-select:none;position:fixed;inset:0}
+    .app{height:100%;display:flex;flex-direction:column;transform-origin:top center}
+    /* Responsive scaling for small screens */
+    @media screen and (max-width:320px){:root{--app-scale:0.85}.app{transform:scale(var(--app-scale));height:calc(100%/var(--app-scale))}.nav{transform:scale(var(--app-scale));transform-origin:bottom center;width:calc(100%/var(--app-scale));left:calc((100% - 100%/var(--app-scale))/2)}}
+    @media screen and (max-width:280px){:root{--app-scale:0.75}.app{transform:scale(var(--app-scale));height:calc(100%/var(--app-scale))}.nav{transform:scale(var(--app-scale));transform-origin:bottom center;width:calc(100%/var(--app-scale));left:calc((100% - 100%/var(--app-scale))/2)}}
+    @media screen and (max-height:500px){.tab{padding:8px;padding-bottom:60px}.nav{padding:2px 4px 4px}.nav-btn{padding:3px 2px}.trophy-display{padding:10px 15px}.battle-btn{padding:10px;font-size:18px}}
+    @media screen and (max-height:400px){.tab{padding:6px;padding-bottom:50px}.trophy-display{padding:8px 10px;margin-bottom:10px}.battle-btn{padding:8px;font-size:16px}.quick-stats{margin-top:5px}.quick-stat-val{font-size:16px}}
+    /* Very small screens get extra shrink */
+    @media screen and (max-width:240px){:root{--app-scale:0.65}.app{transform:scale(var(--app-scale));height:calc(100%/var(--app-scale))}.nav{transform:scale(var(--app-scale));transform-origin:bottom center;width:calc(100%/var(--app-scale));left:calc((100% - 100%/var(--app-scale))/2)}}
     .tabs{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
     .tab{display:none;padding:12px;padding-bottom:70px;opacity:0;transform:translateX(20px);transition:opacity 0.25s ease,transform 0.25s ease}
     .tab.on{display:block;opacity:1;transform:translateX(0);animation:tabSlideIn 0.25s ease}
@@ -829,6 +836,25 @@
   </style>
 </head>
 <body>
+<!-- Initial Loading Screen (shows immediately while game loads) -->
+<div id="initialLoader" style="position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a1a2e 0%,#16213e 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:Arial,sans-serif">
+  <div style="font-size:48px;margin-bottom:20px">⚔️</div>
+  <div style="color:#fff;font-size:24px;font-weight:bold;margin-bottom:10px">ARENA ROYALE</div>
+  <div style="color:#888;font-size:14px;margin-bottom:30px">Loading...</div>
+  <div style="width:200px;height:4px;background:rgba(255,255,255,0.2);border-radius:2px;overflow:hidden">
+    <div id="loadProgress" style="width:0%;height:100%;background:linear-gradient(90deg,#00d4ff,#7b2fff);border-radius:2px;transition:width 0.3s"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var p=0,el=document.getElementById('loadProgress');
+  var i=setInterval(function(){p+=Math.random()*15;if(p>90)p=90;if(el)el.style.width=p+'%';},100);
+  window.addEventListener('DOMContentLoaded',function(){
+    if(el)el.style.width='100%';
+    setTimeout(function(){clearInterval(i);var l=document.getElementById('initialLoader');if(l)l.style.display='none';},200);
+  });
+})();
+</script>
 <div class="game-toast-container" id="toastContainer"></div>
 <svg style="position:absolute;width:0;height:0">
   <defs>
@@ -944,7 +970,7 @@
       <!-- Lucky Jackpot Button -->
       <div style="display:flex;gap:10px;justify-content:center;margin-top:15px;flex-wrap:wrap">
         <button onclick="showTreasureHunt()" style="background:linear-gradient(145deg,#27ae60,#1e8449);border:none;border-radius:12px;padding:12px 20px;color:#fff;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 0 #145a32;font-size:14px">
-          <span style="font-size:20px">📦</span> TREASURE
+          <span style="font-size:20px">📦</span> TREASURE <span style="font-size:11px;opacity:0.9">(25💎)</span>
         </button>
         <button onclick="showTitlesModal()" style="background:linear-gradient(145deg,#f39c12,#d68910);border:none;border-radius:12px;padding:12px 20px;color:#fff;font-weight:900;cursor:pointer;display:flex;align-items:center;gap:8px;box-shadow:0 4px 0 #8b6914;font-size:14px">
           <span style="font-size:20px">🏷️</span> TITLES
@@ -1096,6 +1122,10 @@
         <button class="more-nav-btn" onclick="goTab('CashShop')" style="background:linear-gradient(145deg,#2ecc71,#27ae60);border:none;border-radius:10px;padding:15px 10px;color:#fff;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 0 #1e8449;animation:cashGlow 2s infinite">
           <span style="font-size:24px">💵</span>
           <span style="font-size:11px">CASH SHOP</span>
+        </button>
+        <button class="more-nav-btn" onclick="confirmLogout()" style="background:linear-gradient(145deg,#95a5a6,#7f8c8d);border:none;border-radius:10px;padding:15px 10px;color:#fff;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 0 #566573">
+          <span style="font-size:24px">🚪</span>
+          <span style="font-size:11px">LOGOUT</span>
         </button>
       </div>
       <!-- Stats Section -->
@@ -1466,6 +1496,17 @@
       <button class="unlock-btn" onclick="tryUnlock()">🔓 UNLOCK</button>
     </div>
     <div class="admin-content" id="adminContent">
+      <div class="admin-section" style="background:linear-gradient(135deg,rgba(155,89,182,0.3),rgba(142,68,173,0.3));border:2px solid #9b59b6">
+        <div class="admin-section-title">🎯 TARGET PLAYER</div>
+        <div style="font-size:8px;color:#888;margin-bottom:6px;text-align:center">Select a player to edit their data (default: yourself)</div>
+        <div class="admin-row">
+          <select id="adminTargetPlayer" style="flex:2" onchange="onTargetPlayerChange()">
+            <option value="">👤 Myself</option>
+          </select>
+          <button class="purple" onclick="refreshAdminPlayerList()">🔄</button>
+        </div>
+        <div id="targetPlayerInfo" style="font-size:9px;color:#9b59b6;text-align:center;margin-top:4px;display:none"></div>
+      </div>
       <div class="admin-section">
         <div class="admin-section-title">💰 RESOURCES</div>
         <div class="admin-row"><input type="number" id="admTr" placeholder="Trophies"><button class="pink" onclick="setTrophies()">SET</button></div>
@@ -1752,6 +1793,25 @@
         <div class="admin-row"><select id="deleteGameModeSelect" style="flex:1"></select><button class="orange" onclick="editGameMode()">✏️</button><button class="red" onclick="deleteCustomGameMode()">🗑️</button></div>
       </div>
       <div class="admin-section">
+        <div class="admin-section-title">👮 PLAYER MANAGEMENT</div>
+        <div class="admin-row">
+          <input type="text" id="banUsername" placeholder="Username" style="flex:2">
+          <button class="red" onclick="banPlayer()">🚫 BAN</button>
+        </div>
+        <div class="admin-row">
+          <input type="text" id="unbanUsername" placeholder="Username" style="flex:2">
+          <button class="cyan" onclick="unbanPlayer()">✅ UNBAN</button>
+        </div>
+        <div style="font-size:9px;color:#f39c12;margin:8px 0 4px">🔑 PASSWORD RESET</div>
+        <div class="admin-row">
+          <input type="text" id="resetPwUsername" placeholder="Username" style="flex:1">
+          <input type="text" id="resetPwNew" placeholder="New Password" style="flex:1">
+          <button class="orange" onclick="resetPlayerPassword()">🔑 RESET</button>
+        </div>
+        <div class="admin-row"><button class="purple full" onclick="loadPlayerList()">📋 VIEW ALL PLAYERS</button></div>
+        <div id="playerListContainer" style="max-height:150px;overflow-y:auto;margin-top:8px;display:none"></div>
+      </div>
+      <div class="admin-section">
         <div class="admin-section-title">⚠️ DANGER ZONE</div>
         <div class="admin-row"><button class="red full" onclick="resetGame()">🗑️ RESET ALL DATA</button></div>
       </div>
@@ -1765,6 +1825,24 @@
 const SERVER_HOST = window.location.hostname || 'localhost';
 const SERVER_URL = `http://${SERVER_HOST}:5004`;
 const WS_URL = `ws://${SERVER_HOST}:5004/ws`;
+const CONNECTION_TIMEOUT = 8000; // 8 seconds timeout for connections
+
+// Fetch with timeout wrapper
+async function fetchWithTimeout(url, options = {}, timeout = CONNECTION_TIMEOUT) {
+  const controller = new AbortController();
+  const id = setTimeout(() => controller.abort(), timeout);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    clearTimeout(id);
+    return response;
+  } catch (error) {
+    clearTimeout(id);
+    if (error.name === 'AbortError') {
+      throw new Error('Connection timeout - server unreachable');
+    }
+    throw error;
+  }
+}
 
 const NET = {
   token: null,
@@ -1772,6 +1850,7 @@ const NET = {
   playerId: null,
   isOnline: false,
   isConnecting: false,
+  isBanned: false,
   reconnectAttempts: 0,
   maxReconnectAttempts: 5,
   messageHandlers: {},
@@ -1779,6 +1858,12 @@ const NET = {
 
   // Initialize network connection
   async init() {
+    // Check if this account was banned
+    if (localStorage.getItem('arena_banned') === 'true') {
+      this.showBannedScreen();
+      return false;
+    }
+
     this.updateConnectionStatus('connecting');
     const savedToken = localStorage.getItem('arena_token');
     if (savedToken) {
@@ -1797,10 +1882,113 @@ const NET = {
         console.log('Token validation failed:', e);
         localStorage.removeItem('arena_token');
         this.token = null;
+        // Check if banned
+        if (e.message && e.message.includes('banned')) {
+          this.showBannedScreen();
+          return false;
+        }
       }
     }
     this.updateConnectionStatus('offline');
     return false;
+  },
+
+  showBannedScreen() {
+    // Mark as banned to prevent reconnection attempts
+    this.isBanned = true;
+
+    // Hide all game UI
+    const gameApp = document.querySelector('.app');
+    const loginScreen = document.getElementById('loginScreen');
+    if (gameApp) gameApp.style.display = 'none';
+    if (loginScreen) loginScreen.style.display = 'none';
+
+    // Clear token and mark as banned in localStorage
+    localStorage.removeItem('arena_token');
+    localStorage.setItem('arena_banned', 'true');
+    this.token = null;
+    this.isOnline = false;
+
+    // Close WebSocket if open
+    if (this.ws) {
+      try { this.ws.close(); } catch(e) {}
+      this.ws = null;
+    }
+
+    // Create full-screen banned overlay
+    let bannedScreen = document.getElementById('bannedScreen');
+    if (!bannedScreen) {
+      bannedScreen = document.createElement('div');
+      bannedScreen.id = 'bannedScreen';
+      document.body.appendChild(bannedScreen);
+    }
+    bannedScreen.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:linear-gradient(135deg,#1a0a0a 0%,#2d1010 50%,#1a0a0a 100%);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;font-family:Arial,sans-serif;overflow:hidden';
+    bannedScreen.innerHTML = `
+      <style>
+        @keyframes banPulse { 0%,100%{transform:scale(1);opacity:0.8} 50%{transform:scale(1.1);opacity:1} }
+        @keyframes banGlow { 0%,100%{box-shadow:0 0 60px rgba(231,76,60,0.4)} 50%{box-shadow:0 0 100px rgba(231,76,60,0.7)} }
+        @keyframes banShake { 0%,100%{transform:translateX(0)} 10%,30%,50%,70%,90%{transform:translateX(-5px)} 20%,40%,60%,80%{transform:translateX(5px)} }
+        .ban-icon { font-size:120px;animation:banPulse 2s ease-in-out infinite;filter:drop-shadow(0 0 30px rgba(231,76,60,0.8)) }
+        .ban-title { font-size:48px;font-weight:900;color:#e74c3c;text-shadow:0 0 30px rgba(231,76,60,0.8);margin:20px 0;letter-spacing:8px }
+        .ban-subtitle { font-size:18px;color:#ff6b6b;margin-bottom:10px }
+        .ban-message { font-size:14px;color:#888;max-width:400px;text-align:center;line-height:1.6;margin-bottom:40px }
+        .ban-box { background:rgba(0,0,0,0.5);border:2px solid #e74c3c;border-radius:20px;padding:50px;text-align:center;animation:banGlow 3s ease-in-out infinite }
+        .ban-btn { padding:15px 40px;background:linear-gradient(180deg,#444,#222);border:2px solid #555;border-radius:10px;color:#fff;font-weight:800;font-size:14px;cursor:pointer;transition:all 0.3s;text-transform:uppercase;letter-spacing:2px }
+        .ban-btn:hover { background:linear-gradient(180deg,#555,#333);border-color:#777;transform:translateY(-2px) }
+        .ban-particles { position:absolute;width:100%;height:100%;overflow:hidden;pointer-events:none }
+        .ban-particle { position:absolute;width:4px;height:4px;background:#e74c3c;border-radius:50%;opacity:0.3;animation:float 10s infinite }
+        @keyframes float { 0%{transform:translateY(100vh) rotate(0deg);opacity:0} 10%{opacity:0.3} 90%{opacity:0.3} 100%{transform:translateY(-100vh) rotate(720deg);opacity:0} }
+      </style>
+      <div class="ban-particles" id="banParticles"></div>
+      <div class="ban-box">
+        <div class="ban-icon">🚫</div>
+        <div class="ban-title">BANNED</div>
+        <div class="ban-subtitle">Account Permanently Suspended</div>
+        <div class="ban-message">
+          Your account has been banned from Arena Royale for violating our terms of service.<br><br>
+          If you believe this was a mistake, please contact support.
+        </div>
+      </div>
+      `;
+    // Add particles via JavaScript instead of inline script
+    const banParticles = bannedScreen.querySelector('#banParticles');
+    if (banParticles) {
+      for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'ban-particle';
+        p.style.left = Math.random() * 100 + '%';
+        p.style.animationDelay = Math.random() * 10 + 's';
+        p.style.animationDuration = (8 + Math.random() * 10) + 's';
+        banParticles.appendChild(p);
+      }
+    }
+  },
+
+  showDisconnectWarning() {
+    // Don't show if already showing or if we just started
+    if (document.getElementById('disconnectWarning')) return;
+
+    const warning = document.createElement('div');
+    warning.id = 'disconnectWarning';
+    warning.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(180deg,#e74c3c,#c0392b);padding:12px;text-align:center;z-index:9999;animation:slideDown 0.3s ease';
+    warning.innerHTML = `
+      <div style="font-weight:900;font-size:14px;margin-bottom:4px">⚠️ SERVER DISCONNECTED</div>
+      <div style="font-size:11px;opacity:0.9">Your progress may be reset if not saved. Attempting to reconnect...</div>
+    `;
+    document.body.appendChild(warning);
+
+    // Add animation style if not exists
+    if (!document.getElementById('disconnectStyle')) {
+      const style = document.createElement('style');
+      style.id = 'disconnectStyle';
+      style.textContent = '@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
+      document.head.appendChild(style);
+    }
+  },
+
+  hideDisconnectWarning() {
+    const warning = document.getElementById('disconnectWarning');
+    if (warning) warning.remove();
   },
 
   // REST API calls
@@ -1842,10 +2030,15 @@ const NET = {
               this.isConnecting = false;
               this.reconnectAttempts = 0;
               this.updateConnectionStatus('online');
+              this.hideDisconnectWarning();
               this.updateOnlineIndicator();
               resolve();
             } else if (msg.type === 'auth_error') {
               this.updateConnectionStatus('offline');
+              // Check if error is due to ban
+              if (msg.data.banned) {
+                this.showBannedScreen();
+              }
               reject(new Error(msg.data.error));
             } else if (this.messageHandlers[msg.type]) {
               this.messageHandlers[msg.type](msg.data);
@@ -1858,7 +2051,11 @@ const NET = {
         this.ws.onclose = () => {
           this.isOnline = false;
           this.updateConnectionStatus('offline');
-          this.attemptReconnect();
+          // Don't show warning or reconnect if banned
+          if (!this.isBanned) {
+            this.showDisconnectWarning();
+            this.attemptReconnect();
+          }
         };
 
         this.ws.onerror = (err) => {
@@ -1916,6 +2113,7 @@ const NET = {
     this.token = result.token;
     this.playerId = result.player.id;
     localStorage.setItem('arena_token', this.token);
+    localStorage.removeItem('arena_banned'); // Clear ban flag on successful login
     await this.connectWebSocket();
     await this.loadPlayerData(result.player);
     this.startSyncInterval();
@@ -1980,6 +2178,8 @@ const NET = {
     if (serverPlayer.clan_id) {
       P.clan = { id: serverPlayer.clan_id };
     }
+    // Sync admin status from server
+    P.admin = serverPlayer.admin === true;
     save();
   },
 
@@ -2099,6 +2299,22 @@ NET.on('challenge_failed', (data) => {
   showNotify(data.error || 'Challenge failed', 'error', '❌');
 });
 
+// Handle account banned - immediately show banned screen
+NET.on('account_banned', (data) => {
+  console.log('Account banned:', data);
+  // Stop any ongoing battle
+  if (B && B.on) {
+    B.on = false;
+    if (B.loop) cancelAnimationFrame(B.loop);
+  }
+  // Hide disconnect warning if showing
+  NET.hideDisconnectWarning();
+  // Clear token and show banned screen
+  localStorage.removeItem('arena_token');
+  NET.token = null;
+  NET.showBannedScreen();
+});
+
 NET.on('queue_status', (data) => {
   const status = document.getElementById('matchmakingStatus');
   if (status) {
@@ -2172,6 +2388,25 @@ function showLoginScreen() {
   showLoginForm();
 }
 
+function confirmLogout() {
+  // Create confirmation modal
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.8);display:flex;align-items:center;justify-content:center;z-index:1000';
+  modal.innerHTML = `
+    <div style="background:linear-gradient(180deg,#1b2838,#0d1b2a);border:3px solid #e74c3c;border-radius:16px;padding:25px;text-align:center;max-width:300px">
+      <div style="font-size:40px;margin-bottom:10px">🚪</div>
+      <div style="font-size:18px;font-weight:800;margin-bottom:10px">LOG OUT?</div>
+      <div style="font-size:12px;color:#888;margin-bottom:20px">Are you sure you want to log out?</div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button onclick="this.closest('.modal-overlay').remove()" style="padding:10px 25px;background:linear-gradient(180deg,#555,#333);border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer">Cancel</button>
+        <button onclick="this.closest('.modal-overlay').remove();NET.logout()" style="padding:10px 25px;background:linear-gradient(180deg,#e74c3c,#c0392b);border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer">Log Out</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
 async function doLogin() {
   const username = document.getElementById('loginUsername').value.trim();
   const password = document.getElementById('loginPassword').value;
@@ -2190,7 +2425,12 @@ async function doLogin() {
     showNotify('Welcome back, ' + P.name + '!', 'success');
     if (typeof updateAll === 'function') updateAll();
   } catch (e) {
-    errorEl.textContent = e.message || 'Login failed';
+    // Check if banned
+    if (e.message && e.message.includes('banned')) {
+      NET.showBannedScreen();
+    } else {
+      errorEl.textContent = e.message || 'Login failed';
+    }
     NET.updateConnectionStatus('offline');
   }
 }
@@ -2517,6 +2757,25 @@ function sendBuildingSpawn(card, x, y, lane) {
   }
 }
 
+// Send battle end to server (for multiplayer wins)
+function sendBattleEnd(iWon) {
+  if (B && B.isMultiplayer && B.battleId) {
+    console.log('Sending battle end, I won:', iWon);
+    // Stop the game loop
+    B.on = false;
+    if (B.loop) cancelAnimationFrame(B.loop);
+
+    // Send tower damage to finalize the battle state
+    const myRole = B.myRole || 'player1';
+    NET.send('tower_damage', {
+      battle_id: B.battleId,
+      target: 'king',
+      damage: 9999,
+      target_player: iWon ? (myRole === 'player1' ? 'player2' : 'player1') : myRole
+    });
+  }
+}
+
 function syncBattleState(data) {
   if (!B || !B.on) return;
 
@@ -2617,6 +2876,77 @@ window.addEventListener('DOMContentLoaded', async () => {
     NET.showLoginScreen();
   }
 });
+
+// Responsive Scaling System - Auto-adjust for any screen size
+(function initResponsiveScaling() {
+  const BASE_WIDTH = 375; // Design base width (iPhone SE)
+  const BASE_HEIGHT = 667; // Design base height
+  const MIN_SCALE = 0.5;
+  const MAX_SCALE = 1.2;
+
+  function applyResponsiveScale() {
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+
+    // Calculate scale based on width (primary) and height (secondary)
+    const scaleX = vw / BASE_WIDTH;
+    const scaleY = vh / BASE_HEIGHT;
+
+    // Use the smaller scale to ensure everything fits, with limits
+    let scale = Math.min(scaleX, scaleY);
+    scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale));
+
+    // For very small screens, allow more aggressive scaling
+    if (vw < 320) {
+      scale = Math.max(0.5, vw / BASE_WIDTH);
+    }
+
+    // Apply scale via CSS custom property
+    document.documentElement.style.setProperty('--app-scale', scale.toFixed(3));
+
+    // Apply transform to app container
+    const app = document.querySelector('.app');
+    if (app && scale < 1) {
+      app.style.transform = `scale(${scale})`;
+      app.style.transformOrigin = 'top center';
+      app.style.width = `${100 / scale}%`;
+      app.style.height = `${100 / scale}%`;
+    } else if (app) {
+      app.style.transform = '';
+      app.style.width = '';
+      app.style.height = '';
+    }
+
+    // Also scale fixed elements like nav
+    const nav = document.querySelector('.nav');
+    if (nav && scale < 1) {
+      nav.style.transform = `scale(${scale})`;
+      nav.style.transformOrigin = 'bottom center';
+      nav.style.width = `${100 / scale}%`;
+      nav.style.left = `${(100 - 100 / scale) / 2}%`;
+    } else if (nav) {
+      nav.style.transform = '';
+      nav.style.width = '';
+      nav.style.left = '';
+    }
+
+    // Scale modals
+    const loginBox = document.querySelector('.login-box');
+    if (loginBox && scale < 0.9) {
+      loginBox.style.transform = `scale(${Math.max(0.7, scale)})`;
+    } else if (loginBox) {
+      loginBox.style.transform = '';
+    }
+  }
+
+  // Apply on load and resize
+  window.addEventListener('resize', applyResponsiveScale);
+  window.addEventListener('orientationchange', () => setTimeout(applyResponsiveScale, 100));
+  applyResponsiveScale();
+
+  // Re-apply after a short delay to catch any late layout changes
+  setTimeout(applyResponsiveScale, 500);
+})();
 
 // In-Game Toast Notification System
 function showNotify(message, type = 'default', icon = null, duration = 3500) {
@@ -3273,34 +3603,319 @@ function updateStats(){const a=getArena(P.tr);const totalBattles=P.wins+P.losses
 function updateArena(){const currentArena=getArena(P.tr);const currentIndex=ARENAS.indexOf(currentArena);let html='';ARENAS.forEach((a,i)=>{const isCurrent=i===currentIndex;const isAhead=i>currentIndex;html+=`<div class="arena-item${isCurrent?' current':''}${isAhead?' ahead':''}"><div class="arena-icon">${a.icon}</div><div class="arena-name">${a.name}</div><div class="arena-range">${a.min}-${a.max} trophies</div>${isAhead?`<div class="arena-req">Need ${a.min-P.tr} more trophies</div>`:''}</div>`;});document.getElementById('arenaList').innerHTML=html;}
 
 // Admin functions
-function openAdmin(){document.getElementById('adminModal').classList.add('on');document.getElementById('lockScreen').style.display='block';document.getElementById('adminContent').classList.remove('on');['code1','code2','code3','code4'].forEach(id=>{const el=document.getElementById(id);el.value='';el.dataset.real='';el.classList.remove('correct','wrong');});document.getElementById('code1').focus();populateAdminSelects();}
-function closeAdmin(){document.getElementById('adminModal').classList.remove('on');}
+function openAdmin(){
+  document.getElementById('adminModal').classList.add('on');
+  // Check if player has admin access
+  if(P.admin === true){
+    // Admin has access - skip lock screen
+    document.getElementById('lockScreen').style.display='none';
+    document.getElementById('adminContent').classList.add('on');
+    populateAdminSelects();
+    refreshAdminPlayerList();
+  }else{
+    // Not an admin - show access denied
+    document.getElementById('lockScreen').innerHTML=`
+      <div style="text-align:center;padding:40px;">
+        <div style="font-size:60px;margin-bottom:20px;">🚫</div>
+        <div style="font-size:24px;font-weight:bold;color:#e74c3c;margin-bottom:10px;">ACCESS DENIED</div>
+        <div style="color:#888;margin-bottom:20px;">You are not authorized to access the admin panel.</div>
+        <div style="color:#666;font-size:12px;">Only developers can access this area.</div>
+      </div>`;
+    document.getElementById('lockScreen').style.display='block';
+    document.getElementById('adminContent').classList.remove('on');
+  }
+}
+function closeAdmin(){document.getElementById('adminModal').classList.remove('on');adminTargetPlayerId=null;adminTargetPlayerData=null;document.getElementById('adminTargetPlayer').value='';document.getElementById('targetPlayerInfo').style.display='none';}
 function codeInputHash(num){const input=document.getElementById('code'+num);if(input.value){input.dataset.real=input.value;input.value='#';if(num<4)document.getElementById('code'+(num+1)).focus();}}
 function tryUnlock(){const code=[1,2,3,4].map(n=>document.getElementById('code'+n).dataset.real.toLowerCase()).join('');if(code===ADMIN_CODE){[1,2,3,4].forEach(n=>document.getElementById('code'+n).classList.add('correct'));setTimeout(()=>{document.getElementById('lockScreen').style.display='none';document.getElementById('adminContent').classList.add('on');},300);}else{[1,2,3,4].forEach(n=>document.getElementById('code'+n).classList.add('wrong'));setTimeout(()=>{[1,2,3,4].forEach(n=>{const el=document.getElementById('code'+n);el.classList.remove('wrong');el.value='';el.dataset.real='';});document.getElementById('code1').focus();},500);}}
 function populateAdminSelects(){['unlockCardSelect','levelCardSelect','shardCardSelect'].forEach(id=>{const sel=document.getElementById(id);sel.innerHTML=CARDS.map(c=>`<option value="${c.id}">${c.icon} ${c.name}</option>`).join('');});if(typeof updateMetaDeckSelect==='function')updateMetaDeckSelect();}
-function setTrophies(){P.tr=Math.max(0,parseInt(document.getElementById('admTr').value)||0);save();updatePlay();updateStats();updateLeaderboard();updateRoad();}
-function setGold(){P.gold=Math.max(0,parseInt(document.getElementById('admGold').value)||0);save();updateShop();updateChests();updateStats();}
-function setGems(){P.gems=Math.max(0,parseInt(document.getElementById('admGems').value)||0);save();updateShop();updateChests();updateStats();}
-function setCrystals(){P.crystals=Math.max(0,parseInt(document.getElementById('admCrystals').value)||0);save();updateShop();}
+async function setTrophies(){
+  const val=Math.max(0,parseInt(document.getElementById('admTr').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({trophies:val}))showNotify(`🏆 Set ${adminTargetPlayerData?.username}'s trophies to ${val}`,'success');
+  }else{P.tr=val;save();updatePlay();updateStats();updateLeaderboard();updateRoad();showNotify(`🏆 Trophies set to ${val}`,'success');}
+}
+async function setGold(){
+  const val=Math.max(0,parseInt(document.getElementById('admGold').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({gold:val}))showNotify(`💰 Set ${adminTargetPlayerData?.username}'s gold to ${val}`,'success');
+  }else{P.gold=val;save();updateShop();updateChests();updateStats();showNotify(`💰 Gold set to ${val}`,'success');}
+}
+async function setGems(){
+  const val=Math.max(0,parseInt(document.getElementById('admGems').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({gems:val}))showNotify(`💎 Set ${adminTargetPlayerData?.username}'s gems to ${val}`,'success');
+  }else{P.gems=val;save();updateShop();updateChests();updateStats();showNotify(`💎 Gems set to ${val}`,'success');}
+}
+async function setCrystals(){
+  const val=Math.max(0,parseInt(document.getElementById('admCrystals').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({crystals:val}))showNotify(`💜 Set ${adminTargetPlayerData?.username}'s crystals to ${val}`,'success');
+  }else{P.crystals=val;save();updateShop();showNotify(`💜 Crystals set to ${val}`,'success');}
+}
 function setTrophyGain(){P.trophyGainPerWin=Math.max(0,parseInt(document.getElementById('admTrophyGain').value)||150);save();}
-function setMedals(){const val=Math.max(0,parseInt(document.getElementById('admMedals').value)||0);P.medals=val;P.medalsHighest=Math.max(P.medalsHighest||0,val);save();updateMedalsStats();updatePlay();}
+async function setMedals(){
+  const val=Math.max(0,parseInt(document.getElementById('admMedals').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({medals:val}))showNotify(`🏅 Set ${adminTargetPlayerData?.username}'s medals to ${val}`,'success');
+  }else{P.medals=val;P.medalsHighest=Math.max(P.medalsHighest||0,val);save();updateMedalsStats();updatePlay();showNotify(`🏅 Medals set to ${val}`,'success');}
+}
 function setBotLevel(){const lvl=Math.max(1,Math.min(13,parseInt(document.getElementById('admBotLevel').value)||1));P.forceBotLevel=lvl;save();showNotify(`🤖 Bot level set to ${lvl}`,'success');updateBotLvlDisplay();}
 function updateBotLvlDisplay(){const el=document.getElementById('currentBotLvl');if(el)el.textContent=P.forceBotLevel?'Level '+P.forceBotLevel:'Auto';}
-function setWildCards(){P.royalWildCards=Math.max(0,parseInt(document.getElementById('admWildCards').value)||0);save();updateStats();}
-function setStarPoints(){P.starPoints=Math.max(0,parseInt(document.getElementById('admStarPoints').value)||0);save();updateStats();renderStarShop();}
-function unlockAll(){CARDS.forEach(c=>{if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);});save();updateCards();}
+async function setWildCards(){
+  const val=Math.max(0,parseInt(document.getElementById('admWildCards').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({royal_wild_cards:val}))showNotify(`🃏 Set ${adminTargetPlayerData?.username}'s wild cards to ${val}`,'success');
+  }else{P.royalWildCards=val;save();updateStats();showNotify(`🃏 Wild cards set to ${val}`,'success');}
+}
+async function setStarPoints(){
+  const val=Math.max(0,parseInt(document.getElementById('admStarPoints').value)||0);
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({star_points:val}))showNotify(`⭐ Set ${adminTargetPlayerData?.username}'s star points to ${val}`,'success');
+  }else{P.starPoints=val;save();updateStats();renderStarShop();showNotify(`⭐ Star points set to ${val}`,'success');}
+}
+async function unlockAll(){
+  if(adminTargetPlayerId){
+    const allCardIds=CARDS.map(c=>c.id);
+    if(await adminUpdatePlayer({unlocked:allCardIds}))showNotify(`🔓 Unlocked all cards for ${adminTargetPlayerData?.username}`,'success');
+  }else{CARDS.forEach(c=>{if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);});save();updateCards();showNotify('🔓 All cards unlocked','success');}
+}
 function skipAllChests(){const toOpen=P.chests.map((c,i)=>c&&c.startTime?i:null).filter(i=>i!==null).reverse();toOpen.forEach(idx=>openChest(idx));updateChests();}
-function unlockSingle(){const id=document.getElementById('unlockCardSelect').value;if(!P.unlocked.includes(id))P.unlocked.push(id);save();updateCards();}
-function maxAllCards(){CARDS.forEach(c=>{P.lvls[c.id]=parseInt(document.getElementById('maxLevelInput').value)||25;});save();updateCards();}
-function setCardLevel(){const id=document.getElementById('levelCardSelect').value,lvl=Math.max(1,parseInt(document.getElementById('levelInput').value)||1);P.lvls[id]=lvl;save();updateCards();}
-function addShardsAll(amt){CARDS.forEach(c=>{P.shards[c.id]=(P.shards[c.id]||0)+amt;});save();updateCards();}
-function addShardsSingle(){const id=document.getElementById('shardCardSelect').value,amt=parseInt(document.getElementById('shardInput').value)||0;P.shards[id]=(P.shards[id]||0)+amt;save();updateCards();}
+async function unlockSingle(){
+  const id=document.getElementById('unlockCardSelect').value;
+  if(adminTargetPlayerId){
+    const current=adminTargetPlayerData?.cards?.unlocked||[];
+    if(!current.includes(id)){
+      const updated=[...current,id];
+      if(await adminUpdatePlayer({unlocked:updated}))showNotify(`🔓 Unlocked ${id} for ${adminTargetPlayerData?.username}`,'success');
+    }else{showNotify('Card already unlocked','info');}
+  }else{if(!P.unlocked.includes(id))P.unlocked.push(id);save();updateCards();showNotify(`🔓 ${id} unlocked`,'success');}
+}
+async function maxAllCards(){
+  const maxLvl=parseInt(document.getElementById('maxLevelInput').value)||25;
+  if(adminTargetPlayerId){
+    const levels={};CARDS.forEach(c=>levels[c.id]=maxLvl);
+    if(await adminUpdatePlayer({levels}))showNotify(`⬆️ Maxed all cards to Lv${maxLvl} for ${adminTargetPlayerData?.username}`,'success');
+  }else{CARDS.forEach(c=>{P.lvls[c.id]=maxLvl;});save();updateCards();showNotify(`⬆️ All cards set to Lv${maxLvl}`,'success');}
+}
+async function setCardLevel(){
+  const id=document.getElementById('levelCardSelect').value,lvl=Math.max(1,parseInt(document.getElementById('levelInput').value)||1);
+  if(adminTargetPlayerId){
+    const levels={...(adminTargetPlayerData?.cards?.levels||{}),[id]:lvl};
+    if(await adminUpdatePlayer({levels}))showNotify(`⬆️ Set ${id} to Lv${lvl} for ${adminTargetPlayerData?.username}`,'success');
+  }else{P.lvls[id]=lvl;save();updateCards();showNotify(`⬆️ ${id} set to Lv${lvl}`,'success');}
+}
+async function addShardsAll(amt){
+  if(adminTargetPlayerId){
+    const shards={...(adminTargetPlayerData?.cards?.shards||{})};
+    CARDS.forEach(c=>shards[c.id]=(shards[c.id]||0)+amt);
+    if(await adminUpdatePlayer({shards}))showNotify(`✨ Added ${amt} shards to all cards for ${adminTargetPlayerData?.username}`,'success');
+  }else{CARDS.forEach(c=>{P.shards[c.id]=(P.shards[c.id]||0)+amt;});save();updateCards();showNotify(`✨ Added ${amt} shards to all cards`,'success');}
+}
+async function addShardsSingle(){
+  const id=document.getElementById('shardCardSelect').value,amt=parseInt(document.getElementById('shardInput').value)||0;
+  if(adminTargetPlayerId){
+    const shards={...(adminTargetPlayerData?.cards?.shards||{}),[id]:(adminTargetPlayerData?.cards?.shards?.[id]||0)+amt};
+    if(await adminUpdatePlayer({shards}))showNotify(`✨ Added ${amt} shards to ${id} for ${adminTargetPlayerData?.username}`,'success');
+  }else{P.shards[id]=(P.shards[id]||0)+amt;save();updateCards();showNotify(`✨ Added ${amt} shards to ${id}`,'success');}
+}
 function claimAllRoad(){TROPHY_ROAD.forEach(m=>{if(!P.roadClaimed.includes(m.tr)){P.roadClaimed.push(m.tr);const r=m.reward;if(r.gold)P.gold+=r.gold;if(r.gems)P.gems+=r.gems;if(r.chest){const ct=CHEST_TYPES.find(t=>t.id===r.chest);addChest(ct);}if(r.shards){const cards=CARDS.filter(c=>c.rarity===r.shards.rarity),card=cards[Math.floor(Math.random()*cards.length)];P.shards[card.id]=(P.shards[card.id]||0)+r.shards.amount;}}});save();updateRoad();updateChests();updateCards();updateShop();updateStats();}
 function resetRoad(){P.roadClaimed=[];save();updateRoad();}
 function addAdminChest(type){const ct=CHEST_TYPES.find(t=>t.id===type);if(ct)addChest(ct);updateChests();}
 function fillAllChests(){const types=['silver','gold','magic','giant','legendary','super'];P.chests=P.chests.map((c,i)=>c||{type:types[i%types.length],startTime:null,unlocking:false});save();updateChests();}
 function clearAllChests(){P.chests=Array(MAX_CHESTS).fill(null);save();updateChests();}
 function skipAllChests(){P.chests.forEach(c=>{if(c&&c.unlocking){const type=CHEST_TYPES.find(t=>t.id===c.type);c.startTime=Date.now()-type.time*1000;}});save();updateChests();}
+
+// Player Management (Ban/Unban)
+async function banPlayer() {
+  const username = document.getElementById('banUsername').value.trim();
+  if (!username) { showNotify('Enter a username', 'error'); return; }
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/ban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, banned: true })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showNotify(`🚫 ${username} has been BANNED`, 'error');
+      document.getElementById('banUsername').value = '';
+      loadPlayerList();
+    } else {
+      showNotify(data.error || 'Failed to ban player', 'error');
+    }
+  } catch (e) {
+    showNotify('Network error', 'error');
+  }
+}
+
+async function unbanPlayer() {
+  const username = document.getElementById('unbanUsername').value.trim();
+  if (!username) { showNotify('Enter a username', 'error'); return; }
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/ban`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, banned: false })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showNotify(`✅ ${username} has been UNBANNED`, 'success');
+      document.getElementById('unbanUsername').value = '';
+      loadPlayerList();
+    } else {
+      showNotify(data.error || 'Failed to unban player', 'error');
+    }
+  } catch (e) {
+    showNotify('Network error', 'error');
+  }
+}
+
+async function loadPlayerList() {
+  const container = document.getElementById('playerListContainer');
+  container.style.display = 'block';
+  container.innerHTML = '<div style="color:#888;font-size:10px;text-align:center">Loading...</div>';
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/players`);
+    const data = await res.json();
+    if (res.ok && data.players) {
+      container.innerHTML = data.players.map(p => `
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:4px 8px;margin:2px 0;background:${p.banned ? 'rgba(231,76,60,0.3)' : 'rgba(255,255,255,0.1)'};border-radius:4px;font-size:10px">
+          <span style="color:${p.banned ? '#e74c3c' : '#fff'}">${p.username} ${p.banned ? '🚫' : ''}</span>
+          <span style="color:#888">🏆${p.trophies}</span>
+          <button onclick="${p.banned ? 'unbanPlayer' : 'banPlayer'}Quick('${p.username}')" style="padding:2px 6px;font-size:8px;border:none;border-radius:3px;cursor:pointer;background:${p.banned ? '#27ae60' : '#e74c3c'};color:#fff">${p.banned ? 'Unban' : 'Ban'}</button>
+        </div>
+      `).join('');
+    } else {
+      container.innerHTML = '<div style="color:#e74c3c;font-size:10px;text-align:center">Failed to load</div>';
+    }
+  } catch (e) {
+    container.innerHTML = '<div style="color:#e74c3c;font-size:10px;text-align:center">Network error</div>';
+  }
+}
+
+async function banPlayerQuick(username) {
+  document.getElementById('banUsername').value = username;
+  await banPlayer();
+}
+
+async function unbanPlayerQuick(username) {
+  document.getElementById('unbanUsername').value = username;
+  await unbanPlayer();
+}
+
+async function resetPlayerPassword() {
+  const username = document.getElementById('resetPwUsername').value.trim();
+  const newPassword = document.getElementById('resetPwNew').value;
+  if (!username) { showNotify('Enter a username', 'error'); return; }
+  if (!newPassword) { showNotify('Enter a new password', 'error'); return; }
+  if (newPassword.length < 4) { showNotify('Password must be at least 4 characters', 'error'); return; }
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/reset-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, new_password: newPassword })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      showNotify(`🔑 Password reset for ${username}`, 'success');
+      document.getElementById('resetPwUsername').value = '';
+      document.getElementById('resetPwNew').value = '';
+    } else {
+      showNotify(data.error || 'Failed to reset password', 'error');
+    }
+  } catch (e) {
+    showNotify('Network error', 'error');
+  }
+}
+
+// ==================== ADMIN TARGET PLAYER SYSTEM ====================
+let adminTargetPlayerId = null;  // null means "myself"
+let adminTargetPlayerData = null;
+
+async function refreshAdminPlayerList() {
+  const select = document.getElementById('adminTargetPlayer');
+  select.innerHTML = '<option value="">👤 Myself</option>';
+
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/players`);
+    const data = await res.json();
+    if (res.ok && data.players) {
+      data.players.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.id;
+        opt.textContent = `${p.username} 🏆${p.trophies}${p.banned ? ' 🚫' : ''}`;
+        select.appendChild(opt);
+      });
+    }
+  } catch (e) {
+    console.error('Failed to load player list:', e);
+  }
+}
+
+async function onTargetPlayerChange() {
+  const select = document.getElementById('adminTargetPlayer');
+  const info = document.getElementById('targetPlayerInfo');
+  adminTargetPlayerId = select.value || null;
+
+  if (!adminTargetPlayerId) {
+    adminTargetPlayerData = null;
+    info.style.display = 'none';
+    return;
+  }
+
+  // Fetch target player data
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/player/${adminTargetPlayerId}`);
+    const data = await res.json();
+    if (res.ok && data.player) {
+      adminTargetPlayerData = data.player;
+      info.style.display = 'block';
+      info.innerHTML = `Editing: <strong>${data.player.username}</strong> | 🏆${data.player.stats?.trophies || 0} | 💰${data.player.resources?.gold || 0} | 💎${data.player.resources?.gems || 0}`;
+    } else {
+      showNotify('Failed to load player data', 'error');
+      select.value = '';
+      adminTargetPlayerId = null;
+      adminTargetPlayerData = null;
+      info.style.display = 'none';
+    }
+  } catch (e) {
+    showNotify('Network error loading player', 'error');
+    console.error(e);
+  }
+}
+
+async function adminUpdatePlayer(updates) {
+  if (!adminTargetPlayerId) {
+    // Updating myself - use local P object
+    return false;
+  }
+
+  // Updating another player via API
+  try {
+    const res = await fetch(`${SERVER_URL}/api/admin/player/${adminTargetPlayerId}/update`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates })
+    });
+    const data = await res.json();
+    if (res.ok && data.player) {
+      adminTargetPlayerData = data.player;
+      // Update info display
+      const info = document.getElementById('targetPlayerInfo');
+      info.innerHTML = `Editing: <strong>${data.player.username}</strong> | 🏆${data.player.stats?.trophies || 0} | 💰${data.player.resources?.gold || 0} | 💎${data.player.resources?.gems || 0}`;
+      return true;
+    } else {
+      showNotify(data.error || 'Failed to update player', 'error');
+      return false;
+    }
+  } catch (e) {
+    showNotify('Network error', 'error');
+    console.error(e);
+    return false;
+  }
+}
+
 function resetGame(){
     localStorage.removeItem('arena_royale_v3');
     P = {
@@ -3369,7 +3984,7 @@ const opponentName=opponent?opponent.name:BOT_NAMES[Math.floor(Math.random()*BOT
 const opponentTrophies=opponent?opponent.trophies:playerTr;
 B={on:true,elixir:5,botElixir:5,hand:[],queue:[...P.deck].sort(()=>0.5-Math.random()),next:null,sel:-1,troops:[],towers:{pL:{hp:getPrincessHP(),max:getPrincessHP(),dead:0},pR:{hp:getPrincessHP(),max:getPrincessHP(),dead:0},pK:{hp:getKingTowerHP(),max:getKingTowerHP(),dead:0},aL:{hp:Math.floor(getPrincessHP()*botMult),max:Math.floor(getPrincessHP()*botMult),dead:0},aR:{hp:Math.floor(getPrincessHP()*botMult),max:Math.floor(getPrincessHP()*botMult),dead:0},aK:{hp:Math.floor(getKingTowerHP()*botMult),max:Math.floor(getKingTowerHP()*botMult),dead:0}},tCD:{pL:0,pR:0,pK:0,aL:0,aR:0,aK:0},kingOn:{p:0,a:0},crowns:{me:0,ai:0},time:0,arena,botLvl,botMult,botCards,botHand:[],botQueue:[...botCards],loop:null,gameMode:currentGameMode,spellEffects:[],troopPoisons:[],cardCycle:[],opponentName,opponentTrophies};for(let i=0;i<4;i++)B.hand.push(B.queue.shift());B.next=B.queue.shift();for(let i=0;i<4;i++)B.botHand.push(B.botQueue.shift());B.botNext=B.botQueue.shift();document.getElementById('battle').classList.add('on');try{if(document.documentElement.requestFullscreen)document.documentElement.requestFullscreen().catch(()=>{});}catch(e){}renderArena();startLoop();}
 function quitBattle(){if(B&&B.on){B.on=false;if(B.loop)cancelAnimationFrame(B.loop);}document.getElementById('battle').classList.remove('on');try{if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});}catch(e){}}
-function renderArena(){const a=document.getElementById('arena'),h=a.offsetHeight,w=a.offsetWidth;B.towers.pL.x=40;B.towers.pL.y=h-80;B.towers.pR.x=w-40;B.towers.pR.y=h-80;B.towers.pK.x=w/2;B.towers.pK.y=h-38;B.towers.aL.x=40;B.towers.aL.y=60;B.towers.aR.x=w-40;B.towers.aR.y=60;B.towers.aK.x=w/2;B.towers.aK.y=25;a.innerHTML=`<div class="river"></div><div class="bridge" style="left:35px"></div><div class="bridge" style="right:35px"></div><div class="tower small red" id="t-aL" style="top:42px;left:22px">🏯<span class="hp-text">${B.towers.aL.hp}</span></div><div class="tower small red" id="t-aR" style="top:42px;right:22px">🏯<span class="hp-text">${B.towers.aR.hp}</span></div><div class="tower king red" id="t-aK" style="top:3px;left:50%;transform:translateX(-50%)">🏰<span class="hp-text">${B.towers.aK.hp}</span></div><div class="tower small blue" id="t-pL" style="bottom:68px;left:22px">🏯<span class="hp-text">${B.towers.pL.hp}</span></div><div class="tower small blue" id="t-pR" style="bottom:68px;right:22px">🏯<span class="hp-text">${B.towers.pR.hp}</span></div><div class="tower king blue" id="t-pK" style="bottom:22px;left:50%;transform:translateX(-50%)">🏰<span class="hp-text">${B.towers.pK.hp}</span></div><div id="spawnZone"></div><div id="pocketLeft" class="pocket-zone"></div><div id="pocketRight" class="pocket-zone"></div><div id="elixirBar"><div id="elixirFill" style="width:50%"></div><div id="elixirText">5/10</div><div class="double-elixir" id="doubleElixir">2X</div></div><div id="hand"></div><div id="nextCard"><div class="lbl">NEXT</div><div class="icon">${getCard(B.next)?.icon||'?'}</div></div><div id="emoteBtn" onclick="toggleEmotes()">😀</div><div id="emotePanel">${P.equippedEmotes.filter(id=>id).map(id=>{const em=ALL_EMOTES.find(x=>x.id===id);return em?`<div class="emote-btn" onclick="sendEmote('${em.icon}')">${em.icon}</div>`:''}).join('')}</div>`;document.getElementById('botLbl').textContent=B.opponentName+' 🏆'+B.opponentTrophies;document.getElementById('myCrowns').textContent='0';document.getElementById('aiCrowns').textContent='0';const spawnZone=document.getElementById('spawnZone');spawnZone.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||B.elixir<card.cost)return;const rect=a.getBoundingClientRect(),zoom=1.75,x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom,lane=x<w/2?'left':'right';if(card.type==='spell')castSpell(card,x,y,'player');else spawnTroop(card,x,y,'player',lane);B.elixir-=card.cost;cycleCard();});a.addEventListener('pointerdown',function(e){if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||card.type!=='spell'||B.elixir<card.cost)return;if(e.target.closest('#hand')||e.target.closest('#elixirBar')||e.target.closest('#nextCard')||e.target.closest('#emoteBtn')||e.target.closest('#emotePanel'))return;e.preventDefault();const rect=a.getBoundingClientRect(),zoom=1.75;castSpell(card,(e.clientX-rect.left)/zoom,(e.clientY-rect.top)/zoom,'player');B.elixir-=card.cost;cycleCard();},true);updateHand();}
+function renderArena(){const a=document.getElementById('arena'),h=a.offsetHeight,w=a.offsetWidth;B.towers.pL.x=40;B.towers.pL.y=h-80;B.towers.pR.x=w-40;B.towers.pR.y=h-80;B.towers.pK.x=w/2;B.towers.pK.y=h-38;B.towers.aL.x=40;B.towers.aL.y=60;B.towers.aR.x=w-40;B.towers.aR.y=60;B.towers.aK.x=w/2;B.towers.aK.y=25;a.innerHTML=`<div class="river"></div><div class="bridge" style="left:35px"></div><div class="bridge" style="right:35px"></div><div class="tower small red" id="t-aL" style="top:42px;left:22px">🏯<span class="hp-text">${B.towers.aL.hp}</span></div><div class="tower small red" id="t-aR" style="top:42px;right:22px">🏯<span class="hp-text">${B.towers.aR.hp}</span></div><div class="tower king red" id="t-aK" style="top:3px;left:50%;transform:translateX(-50%)">🏰<span class="hp-text">${B.towers.aK.hp}</span></div><div class="tower small blue" id="t-pL" style="bottom:68px;left:22px">🏯<span class="hp-text">${B.towers.pL.hp}</span></div><div class="tower small blue" id="t-pR" style="bottom:68px;right:22px">🏯<span class="hp-text">${B.towers.pR.hp}</span></div><div class="tower king blue" id="t-pK" style="bottom:22px;left:50%;transform:translateX(-50%)">🏰<span class="hp-text">${B.towers.pK.hp}</span></div><div id="spawnZone"></div><div id="pocketLeft" class="pocket-zone"></div><div id="pocketRight" class="pocket-zone"></div><div id="elixirBar"><div id="elixirFill" style="width:50%"></div><div id="elixirText">5/10</div><div class="double-elixir" id="doubleElixir">2X</div></div><div id="hand"></div><div id="nextCard"><div class="lbl">NEXT</div><div class="icon">${getCard(B.next)?.icon||'?'}</div></div><div id="emoteBtn" onclick="toggleEmotes()">😀</div><div id="emotePanel">${P.equippedEmotes.filter(id=>id).map(id=>{const em=ALL_EMOTES.find(x=>x.id===id);return em?`<div class="emote-btn" onclick="sendEmote('${em.icon}')">${em.icon}</div>`:''}).join('')}</div>`;document.getElementById('botLbl').textContent=B.opponentName+' 🏆'+B.opponentTrophies;document.getElementById('myCrowns').textContent='0';document.getElementById('aiCrowns').textContent='0';const spawnZone=document.getElementById('spawnZone');spawnZone.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||B.elixir<card.cost)return;const rect=a.getBoundingClientRect(),zoom=1,x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom,lane=x<w/2?'left':'right';if(card.type==='spell')castSpell(card,x,y,'player');else spawnTroop(card,x,y,'player',lane);B.elixir-=card.cost;cycleCard();});a.addEventListener('pointerdown',function(e){if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||card.type!=='spell'||B.elixir<card.cost)return;if(e.target.closest('#hand')||e.target.closest('#elixirBar')||e.target.closest('#nextCard')||e.target.closest('#emoteBtn')||e.target.closest('#emotePanel'))return;e.preventDefault();const rect=a.getBoundingClientRect(),zoom=1;castSpell(card,(e.clientX-rect.left)/zoom,(e.clientY-rect.top)/zoom,'player');B.elixir-=card.cost;cycleCard();},true);updateHand();}
 function toggleEmotes(){document.getElementById('emotePanel').classList.toggle('on');}
 function sendEmote(e){document.getElementById('emotePanel').classList.remove('on');const a=document.getElementById('arena'),el=document.createElement('div');el.className='emote-display';el.textContent=e;el.style.left=(a.offsetWidth/2-18)+'px';el.style.bottom='100px';a.appendChild(el);setTimeout(()=>el.remove(),2000);}
 function cycleCard(){const playedCardId=B.hand[B.sel];B.hand[B.sel]=B.next;B.next=B.queue.shift();if(!B.queue.length)B.queue=[...P.deck].sort(()=>0.5-Math.random());B.sel=-1;document.getElementById('spawnZone').classList.remove('ready');const pl=document.getElementById('pocketLeft'),pr=document.getElementById('pocketRight');if(pl)pl.classList.remove('ready');if(pr)pr.classList.remove('ready');document.getElementById('nextCard').querySelector('.icon').textContent=getCard(B.next)?.icon||'?';if(playedCardId){if(!B.cardCycle)B.cardCycle=[];B.cardCycle.push(playedCardId);if(B.cardCycle.length>4)B.cardCycle.shift();updateCardCycle();}updateHand();}
@@ -3601,6 +4216,13 @@ bldg.el.remove();return false;
 // Add elixir pulse animation style
 if(!document.getElementById('elixirPumpStyle')){const style=document.createElement('style');style.id='elixirPumpStyle';style.textContent='@keyframes elixirPulse{0%{transform:scale(1);opacity:1}100%{transform:scale(1.5) translateY(-20px);opacity:0}}';document.head.appendChild(style);}
 function updateTower(k){const tw=B.towers[k],el=document.getElementById('t-'+k);if(!el)return;el.querySelector('.hp-text').textContent=Math.max(0,tw.hp);if(tw.hp<=0&&!tw.dead){tw.dead=1;el.classList.add('dead');const side=k[0]==='p'?'ai':'me';B.crowns[side]++;if(k.includes('K'))B.crowns[side]=3;else B.kingOn[k[0]]=1;document.getElementById('myCrowns').textContent=B.crowns.me;document.getElementById('aiCrowns').textContent=B.crowns.ai;
+// Sync tower destruction to server in multiplayer
+if(B.isMultiplayer&&B.battleId){
+  const myRole=B.myRole||'player1';
+  const towerType=k.includes('K')?'king':(k.includes('L')?'left':'right');
+  const targetPlayer=k[0]==='p'?myRole:(myRole==='player1'?'player2':'player1');
+  NET.send('tower_damage',{battle_id:B.battleId,target:towerType,damage:9999,target_player:targetPlayer});
+}
 // Unlock pocket zones when enemy princess towers are destroyed
 if(k==='aL'){const pl=document.getElementById('pocketLeft');if(pl)pl.classList.add('unlocked');}
 if(k==='aR'){const pr=document.getElementById('pocketRight');if(pr)pr.classList.add('unlocked');}}}
@@ -3649,7 +4271,7 @@ function activateChampionAbility(){
 if(!B||!B.on||!B.activeChampion)return;
 const t=B.activeChampion;if(t.abilityUsed)return;
 t.abilityUsed=true;t.hitCount=10;triggerAbility(t);updateChampionAbilityButton();}
-function startLoop(){let last=performance.now();function loop(now){if(!B||!B.on)return;const dt=(now-last)/1000;last=now;B.time+=dt;const rem=Math.max(0,300-B.time);document.getElementById('timer').textContent=fmt(rem);if(rem<=0){endBattle(B.crowns.me>B.crowns.ai);return;}const rate=B.time>=120?1.6:0.8;B.elixir=Math.min(10,B.elixir+dt*rate);if(!B.isMultiplayer)B.botElixir=Math.min(10,B.botElixir+dt*rate*0.85);document.getElementById('elixirFill').style.width=(B.elixir*10)+'%';document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/10';document.getElementById('doubleElixir').classList.toggle('on',B.time>=120);updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);towerAttacks(dt);if(!B.isMultiplayer)aiTurn();if(B.crowns.me>=3){endBattle(true);return;}if(B.crowns.ai>=3){endBattle(false);return;}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
+function startLoop(){let last=performance.now();function loop(now){if(!B||!B.on)return;const dt=(now-last)/1000;last=now;B.time+=dt;const rem=Math.max(0,(B.duration||180)-B.time);document.getElementById('timer').textContent=fmt(rem);if(rem<=0){if(B.isMultiplayer){sendBattleEnd(B.crowns.me>B.crowns.ai);return;}else{endBattle(B.crowns.me>B.crowns.ai);return;}}const rate=B.time>=120?1.6:0.8;B.elixir=Math.min(10,B.elixir+dt*rate);if(!B.isMultiplayer)B.botElixir=Math.min(10,B.botElixir+dt*rate*0.85);document.getElementById('elixirFill').style.width=(B.elixir*10)+'%';document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/10';document.getElementById('doubleElixir').classList.toggle('on',B.time>=120);updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);towerAttacks(dt);if(!B.isMultiplayer)aiTurn();if(B.crowns.me>=3){if(B.isMultiplayer){sendBattleEnd(true);return;}else{endBattle(true);return;}}if(B.crowns.ai>=3){if(B.isMultiplayer){sendBattleEnd(false);return;}else{endBattle(false);return;}}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
 function updateTroops(dt){const a=document.getElementById('arena');B.troops.forEach(t=>{if(t.hp<=0)return;if(t.stun>0){t.stun-=dt;return;}const target=findTarget(t);if(!target)return;const dx=target.x-t.x,dy=target.y-t.y,dist=Math.sqrt(dx*dx+dy*dy);if(t.card.charge&&!t.charge){t.chargeBuildup+=dt;if(t.chargeBuildup>=2)t.charge=1;}if(dist<=t.rng){t.cd-=dt;if(t.cd<=0){let dmg=t.dmg;if(t.charge){dmg*=2;t.charge=0;showDmg(t.x,t.y-12,'⚡CHARGE!','#f1c40f');}if(target.type==='tower'){t.lockedTower=target.key;B.towers[target.key].hp-=dmg;showDmg(target.x,target.y,'-'+dmg);updateTower(target.key);if(t.card.poison&&!B.towers[target.key].poisoned){B.towers[target.key].poisoned=true;B.troopPoisons.push({tower:target.key,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}else{if(t.card.spl){const sr=t.card.spl*16;B.troops.forEach(e=>{if(e.side!==t.side&&e.hp>0){const ed=Math.sqrt((e.x-target.x)**2+(e.y-target.y)**2);if(ed<sr){e.hp-=dmg;showDmg(e.x,e.y,'-'+dmg);if(t.card.poison&&!e.poisoned){e.poisoned=true;B.troopPoisons.push({target:e,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}});}else{target.hp-=dmg;showDmg(target.x,target.y,'-'+dmg);if(t.card.poison&&!target.poisoned){target.poisoned=true;B.troopPoisons.push({target,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}t.hitCount++;if(t.card.ability&&t.hitCount>=10&&!t.abilityUsed){t.abilityUsed=true;triggerAbility(t);}const counter=t.el.querySelector('.hit-counter');if(counter)counter.textContent=t.hitCount;t.cd=t.as;}}else{let spd=t.charge?t.spd*2:t.spd;const pushDist=30;B.troops.forEach(p=>{if(p!==t&&p.side===t.side&&p.hp>0&&p.spd>t.spd){const px=p.x-t.x,py=p.y-t.y,pd=Math.sqrt(px*px+py*py);const behind=(t.side==='player'?py>0:py<0);const sameArea=Math.abs(px)<25;if(pd<pushDist&&behind&&sameArea){spd=Math.max(spd,p.spd*0.85);}}});t.x+=(dx/dist)*spd*38*dt;t.y+=(dy/dist)*spd*38*dt;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';}const bar=t.el.querySelector('.hp-fill');if(bar)bar.style.width=Math.max(0,(t.hp/t.maxHp)*100)+'%';});B.troops=B.troops.filter(t=>{if(t.hp<=0){const fx=document.createElement('div');fx.className='death-effect';fx.textContent=t.card.icon;fx.style.left=t.x+'px';fx.style.top=t.y+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),500);t.el.remove();return false;}return true;});}
 function findTarget(t){const enemy=t.side==='player'?'ai':'player',tKeys=enemy==='ai'?['aL','aR','aK']:['pL','pR','pK'];let best=null,bestD=120;
 // If troop has locked onto a tower (already hit it once), keep targeting it
@@ -4665,14 +5287,14 @@ a.innerHTML=`<div class="river" style="background:linear-gradient(90deg,${riverC
 document.getElementById('botLbl').textContent=B.gameMode==='chaos'?'CHAOS Bot':B.gameMode==='tourney'?'🏆 Tournament':B.gameMode==='medals'?'⚔️ Ranked':(B.opponentName||'Opponent');
 document.getElementById('myCrowns').textContent='0';document.getElementById('aiCrowns').textContent='0';
 const spawnZone=document.getElementById('spawnZone');
-spawnZone.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||B.elixir<card.cost)return;const rect=a.getBoundingClientRect(),zoom=1.75,x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom,lane=x<w/2?'left':'right';if(card.type==='spell')castSpell(card,x,y,'player');else if(card.type==='building')spawnBuilding(card,x,y,'player',lane);else{spawnTroop(card,x,y,'player',lane);P.troopsDeployed=(P.troopsDeployed||0)+(card.cnt||1);}B.elixir-=card.cost;cycleCard();});
+spawnZone.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||B.elixir<card.cost)return;const rect=a.getBoundingClientRect(),zoom=1,x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom,lane=x<w/2?'left':'right';if(card.type==='spell')castSpell(card,x,y,'player');else if(card.type==='building')spawnBuilding(card,x,y,'player',lane);else{spawnTroop(card,x,y,'player',lane);P.troopsDeployed=(P.troopsDeployed||0)+(card.cnt||1);}B.elixir-=card.cost;cycleCard();});
 // Pocket zone event listeners - allow spawning in enemy territory when their tower is destroyed
 const pocketLeft=document.getElementById('pocketLeft');
 const pocketRight=document.getElementById('pocketRight');
-function handlePocketSpawn(e,pocket){e.preventDefault();e.stopPropagation();if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||B.elixir<card.cost)return;const rect=a.getBoundingClientRect(),zoom=1.75,x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom,lane=pocket==='left'?'left':'right';if(card.type==='spell')castSpell(card,x,y,'player');else if(card.type==='building')spawnBuilding(card,x,y,'player',lane);else{spawnTroop(card,x,y,'player',lane);P.troopsDeployed=(P.troopsDeployed||0)+(card.cnt||1);}B.elixir-=card.cost;cycleCard();}
+function handlePocketSpawn(e,pocket){e.preventDefault();e.stopPropagation();if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||B.elixir<card.cost)return;const rect=a.getBoundingClientRect(),zoom=1,x=(e.clientX-rect.left)/zoom,y=(e.clientY-rect.top)/zoom,lane=pocket==='left'?'left':'right';if(card.type==='spell')castSpell(card,x,y,'player');else if(card.type==='building')spawnBuilding(card,x,y,'player',lane);else{spawnTroop(card,x,y,'player',lane);P.troopsDeployed=(P.troopsDeployed||0)+(card.cnt||1);}B.elixir-=card.cost;cycleCard();}
 pocketLeft.addEventListener('pointerdown',function(e){handlePocketSpawn(e,'left');});
 pocketRight.addEventListener('pointerdown',function(e){handlePocketSpawn(e,'right');});
-a.addEventListener('pointerdown',function(e){if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||card.type!=='spell'||B.elixir<card.cost)return;if(e.target.closest('#hand')||e.target.closest('#elixirBar')||e.target.closest('#nextCard')||e.target.closest('#emoteBtn')||e.target.closest('#emotePanel'))return;e.preventDefault();const rect=a.getBoundingClientRect(),zoom=1.75;castSpell(card,(e.clientX-rect.left)/zoom,(e.clientY-rect.top)/zoom,'player');B.elixir-=card.cost;cycleCard();},true);
+a.addEventListener('pointerdown',function(e){if(!B||!B.on||B.sel===-1)return;const cardId=B.hand[B.sel],card=getLvlCard(cardId);if(!card||card.type!=='spell'||B.elixir<card.cost)return;if(e.target.closest('#hand')||e.target.closest('#elixirBar')||e.target.closest('#nextCard')||e.target.closest('#emoteBtn')||e.target.closest('#emotePanel'))return;e.preventDefault();const rect=a.getBoundingClientRect(),zoom=1;castSpell(card,(e.clientX-rect.left)/zoom,(e.clientY-rect.top)/zoom,'player');B.elixir-=card.cost;cycleCard();},true);
 updateHand();
 startSnowEffect();
 }
@@ -4721,7 +5343,10 @@ const cm=B.customMode||{};
 const duration=B.isCustom?(cm.infiniteTime?99999:(cm.duration||180)):180;
 const rem=B.isTest?999:Math.max(0,duration-B.time);
 document.getElementById('timer').textContent=(B.isTest||(B.isCustom&&cm.infiniteTime))?'∞':fmt(rem);
-if(rem<=0&&!B.isTest&&!(B.isCustom&&cm.infiniteTime)){endBattle(B.crowns.me>B.crowns.ai);return;}
+if(rem<=0&&!B.isTest&&!(B.isCustom&&cm.infiniteTime)){
+  if(B.isMultiplayer){sendBattleEnd(B.crowns.me>B.crowns.ai);return;}
+  else{endBattle(B.crowns.me>B.crowns.ai);return;}
+}
 // Calculate elixir rate based on mode
 let rate=B.time>=60?1.6:0.8;
 if(B.isCustom){
@@ -4752,7 +5377,15 @@ if(B.gameMode==='chaos'||(B.isCustom&&cm.chaosEvents))applyChaosModifiers();
 // Apply custom mode special effects
 if(B.isCustom)applyCustomModeModifiers(dt);
 // Check for 3-crown victory immediately after tower updates
-if(B.crowns.me>=3){endBattle(true);return;}if(B.crowns.ai>=3){endBattle(false);return;}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
+if(B.crowns.me>=3){
+  if(B.isMultiplayer){sendBattleEnd(true);return;}
+  else{endBattle(true);return;}
+}
+if(B.crowns.ai>=3){
+  if(B.isMultiplayer){sendBattleEnd(false);return;}
+  else{endBattle(false);return;}
+}
+B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
 
 // Apply custom mode modifiers during battle
 function applyCustomModeModifiers(dt){
@@ -4799,9 +5432,10 @@ B.troops.forEach(t=>{
 // Add wild items to shop
 SHOP_ITEMS.push({id:'wildtoken',name:'Wild Token',desc:'Chance for wild item!',icon:'🌀',price:500,currency:'gems',reward:{wildToken:1},special:true});
 
-// Handle wild token purchase
+// Handle wild token purchase - wrap the original buyItem
+(function(){
 const originalBuyItem=buyItem;
-function buyItem(item){
+window.buyItem=function(item){
 if(item.reward&&item.reward.wildToken){
 if(P.gems<item.price){showNotify('Not enough gems!','error','💎');return;}
 P.gems-=item.price;
@@ -4811,7 +5445,8 @@ else showNotify('No new item, but +1 Wild Token!','info','🎫');
 save();updateShop();updateWild();return;
 }
 originalBuyItem(item);
-}
+};
+})();
 
 // ========== NEW FEATURES V2.0 ==========
 
@@ -4962,13 +5597,60 @@ function joinSpecificClan(name,badge,trophies,memberCount){
   closeClanBrowser();
 }
 
+function generateRealisticMemberStats(role,clanAvgTrophies,memberIndex){
+  // Higher roles = higher trophies on average
+  const roleMultipliers={Leader:1.4,'Co-Leader':1.2,Elder:1.0,Member:0.8};
+  const mult=roleMultipliers[role]||0.8;
+  // Base trophies with variance, influenced by clan strength and role
+  const baseTrophies=Math.floor(clanAvgTrophies*mult*(0.7+Math.random()*0.6));
+  const trophies=Math.max(500,Math.min(9000,baseTrophies+Math.floor(Math.random()*2000-1000)));
+  // Max trophies slightly higher than current
+  const maxTrophies=trophies+Math.floor(Math.random()*500)+50;
+  // Calculate wins/losses based on trophies (roughly 30 trophies per net win at higher levels)
+  const totalGames=Math.floor(trophies/15)+Math.floor(Math.random()*200)+50;
+  const winRate=0.45+Math.random()*0.2; // 45-65% win rate
+  const wins=Math.floor(totalGames*winRate);
+  const losses=totalGames-wins;
+  // Crowns: ~3 per match average
+  const crowns=Math.floor(totalGames*2.5+Math.random()*100);
+  // Donations based on role and activity (leaders donate more)
+  const donationMultiplier={Leader:2.5,'Co-Leader':2.0,Elder:1.5,Member:1.0}[role]||1;
+  const donations=Math.floor((Math.random()*150+50)*donationMultiplier);
+  // Last active: more recent for higher roles
+  const hoursAgo=role==='Leader'?Math.random()*2:role==='Co-Leader'?Math.random()*12:role==='Elder'?Math.random()*24:Math.random()*72;
+  const lastActive=Date.now()-hoursAgo*3600000;
+  // Current streak and max streak
+  const maxStreak=Math.floor(Math.random()*15)+3;
+  const currentStreak=Math.random()<0.4?Math.floor(Math.random()*maxStreak):0;
+  return {trophies,maxTrophies,wins,losses,crowns,donations,lastActive,maxStreak,currentStreak};
+}
+
 function actuallyJoinClan(name,badge,trophies,memberCount){
-  P.clan={name,badge,members:[],warWins:Math.floor(Math.random()*50),warTrophies:trophies,donationRequests:[],chatHistory:[]};
+  const clanAvgTrophies=Math.floor(trophies/memberCount); // Estimate avg per member
+  P.clan={name,badge,members:[],warWins:Math.floor(Math.random()*50)+10,warTrophies:trophies,donationRequests:[],chatHistory:[],level:Math.floor(Math.random()*10)+1};
+  const usedNames=new Set();
   for(let i=0;i<memberCount;i++){
     const role=i===0?'Leader':i<3?'Co-Leader':i<6?'Elder':'Member';
-    P.clan.members.push({name:BOT_NAMES[Math.floor(Math.random()*BOT_NAMES.length)],trophies:Math.floor(Math.random()*15000)+1000,role,donations:Math.floor(Math.random()*200),isBot:true});
+    let memberName;
+    do{memberName=BOT_NAMES[Math.floor(Math.random()*BOT_NAMES.length)];}while(usedNames.has(memberName));
+    usedNames.add(memberName);
+    const stats=generateRealisticMemberStats(role,clanAvgTrophies,i);
+    P.clan.members.push({
+      name:memberName,
+      trophies:stats.trophies,
+      maxTrophies:stats.maxTrophies,
+      wins:stats.wins,
+      losses:stats.losses,
+      crowns:stats.crowns,
+      role,
+      donations:stats.donations,
+      lastActive:stats.lastActive,
+      maxStreak:stats.maxStreak,
+      currentStreak:stats.currentStreak,
+      isBot:true
+    });
   }
-  P.clan.members.push({name:P.name,trophies:P.tr,role:'Member',donations:0});
+  P.clan.members.push({name:P.name,trophies:P.tr,maxTrophies:Math.max(P.tr,P.highestTr||P.tr),wins:P.stats?.wins||0,losses:P.stats?.losses||0,crowns:P.stats?.crowns||0,role:'Member',donations:0,lastActive:Date.now(),isBot:false});
   save();updateClan();
   showNotify(`🏰 Joined ${name}!\nWelcome to the clan!`,'success');
 }
@@ -5029,6 +5711,15 @@ function declineJoinRequest(idx){
 // ===== CLAN MEMBER POPUP (Click to show, centered) =====
 let memberPopupData=[];
 let activePopupIdx=-1;
+function formatLastActive(timestamp){
+  const diff=Date.now()-timestamp;
+  const mins=Math.floor(diff/60000);
+  const hours=Math.floor(diff/3600000);
+  const days=Math.floor(diff/86400000);
+  if(mins<60)return `${mins}m ago`;
+  if(hours<24)return `${hours}h ago`;
+  return `${days}d ago`;
+}
 function showMemberPopup(idx,event){
   event.stopPropagation();
   // Toggle if same popup clicked
@@ -5043,12 +5734,15 @@ function showMemberPopup(idx,event){
   popup.style.cssText='position:fixed;z-index:9999;background:linear-gradient(145deg,#1b2838,#0d1b2a);border:2px solid #ffd700;border-radius:12px;padding:15px;min-width:220px;max-width:280px;box-shadow:0 10px 30px rgba(0,0,0,0.8);left:50%;top:120px;transform:translateX(-50%);animation:popupSlideIn 0.2s ease';
   const roleColors={Leader:'#ffd700','Co-Leader':'#e74c3c',Elder:'#3498db',Member:'#95a5a6'};
   const roleIcons={Leader:'👑','Co-Leader':'⭐',Elder:'🛡️',Member:'👤'};
-  popup.innerHTML=`<div style="position:absolute;top:8px;right:10px;cursor:pointer;font-size:16px;color:#666" onclick="hideMemberPopup()">✕</div><div style="text-align:center;margin-bottom:10px"><div style="font-size:40px;margin-bottom:5px">${roleIcons[member.role]||'👤'}</div><div style="font-weight:900;font-size:16px;color:#fff">${member.name}</div><div style="font-size:11px;color:${roleColors[member.role]||'#888'};font-weight:800">${member.role}</div></div><div style="background:#0a1520;border-radius:8px;padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Trophies</span><span style="color:#ffd700;font-weight:800;font-size:11px">🏆 ${member.trophies.toLocaleString()}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Donations</span><span style="color:#27ae60;font-weight:800;font-size:11px">🎁 ${member.donations||0}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Wins</span><span style="color:#3498db;font-weight:800;font-size:11px">✅ ${member.wins||Math.floor(member.trophies/30)}</span></div><div style="display:flex;justify-content:space-between"><span style="color:#888;font-size:11px">Status</span><span style="color:#27ae60;font-weight:800;font-size:11px">🟢 Online</span></div></div>${member.name!==P.name?`<div style="margin-top:10px;display:flex;gap:6px"><button onclick="challengeMember('${member.name}')" style="flex:1;padding:8px;background:linear-gradient(180deg,#9b59b6,#8e44ad);border:none;border-radius:6px;color:#fff;font-weight:800;font-size:10px;cursor:pointer">⚔️ Battle</button><button onclick="visitMember('${member.name}')" style="flex:1;padding:8px;background:linear-gradient(180deg,#3498db,#2980b9);border:none;border-radius:6px;color:#fff;font-weight:800;font-size:10px;cursor:pointer">👁️ Profile</button></div>`:'<div style="margin-top:8px;text-align:center;color:#ffd700;font-size:10px;font-weight:800">⭐ This is you!</div>'}`;
+  const winRate=member.wins&&member.losses?Math.round(member.wins/(member.wins+member.losses)*100):50;
+  const lastActiveText=member.lastActive?formatLastActive(member.lastActive):'Online';
+  const isOnline=!member.lastActive||Date.now()-member.lastActive<3600000;
+  popup.innerHTML=`<div style="position:absolute;top:8px;right:10px;cursor:pointer;font-size:16px;color:#666" onclick="hideMemberPopup()">✕</div><div style="text-align:center;margin-bottom:10px"><div style="font-size:40px;margin-bottom:5px">${roleIcons[member.role]||'👤'}</div><div style="font-weight:900;font-size:16px;color:#fff">${member.name}</div><div style="font-size:11px;color:${roleColors[member.role]||'#888'};font-weight:800">${member.role}</div></div><div style="background:#0a1520;border-radius:8px;padding:10px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Trophies</span><span style="color:#ffd700;font-weight:800;font-size:11px">🏆 ${member.trophies.toLocaleString()}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Best</span><span style="color:#ff8c00;font-weight:800;font-size:11px">⭐ ${(member.maxTrophies||member.trophies).toLocaleString()}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Win Rate</span><span style="color:#3498db;font-weight:800;font-size:11px">${winRate}% (${member.wins||0}W/${member.losses||0}L)</span></div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Crowns</span><span style="color:#e74c3c;font-weight:800;font-size:11px">👑 ${(member.crowns||0).toLocaleString()}</span></div><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="color:#888;font-size:11px">Donations</span><span style="color:#27ae60;font-weight:800;font-size:11px">🎁 ${member.donations||0}</span></div><div style="display:flex;justify-content:space-between"><span style="color:#888;font-size:11px">Last Active</span><span style="color:${isOnline?'#27ae60':'#888'};font-weight:800;font-size:11px">${isOnline?'🟢 Online':lastActiveText}</span></div></div>${member.name!==P.name?`<div style="margin-top:10px;display:flex;gap:6px"><button onclick="challengeMember('${member.name}')" style="flex:1;padding:8px;background:linear-gradient(180deg,#9b59b6,#8e44ad);border:none;border-radius:6px;color:#fff;font-weight:800;font-size:10px;cursor:pointer">⚔️ Battle</button><button onclick="visitMember('${member.name}')" style="flex:1;padding:8px;background:linear-gradient(180deg,#3498db,#2980b9);border:none;border-radius:6px;color:#fff;font-weight:800;font-size:10px;cursor:pointer">👁️ Profile</button></div>`:'<div style="margin-top:8px;text-align:center;color:#ffd700;font-size:10px;font-weight:800">⭐ This is you!</div>'}`;
   document.body.appendChild(popup);
 }
 function hideMemberPopup(){document.querySelectorAll('.member-popup').forEach(p=>p.remove());activePopupIdx=-1;}
 function challengeMember(name){hideMemberPopup();showNotify(`⚔️ Challenged ${name}!\nStarting friendly battle...`,'info');setTimeout(()=>startBattle(),1000);}
-function visitMember(name){hideMemberPopup();const member=P.clan?.members.find(m=>m.name===name);if(!member)return;showNotify(`👁️ ${name}'s Profile\n🏆 ${member.trophies.toLocaleString()} Trophies\n✅ ${member.wins||Math.floor(member.trophies/30)} Wins\n🎁 ${member.donations||0} Donated`,'info');}
+function visitMember(name){hideMemberPopup();const member=P.clan?.members.find(m=>m.name===name);if(!member)return;const winRate=member.wins&&member.losses?Math.round(member.wins/(member.wins+member.losses)*100):50;showNotify(`👁️ ${name}'s Profile\n🏆 ${member.trophies.toLocaleString()} (Best: ${(member.maxTrophies||member.trophies).toLocaleString()})\n📊 ${winRate}% Win Rate (${member.wins||0}W/${member.losses||0}L)\n👑 ${(member.crowns||0).toLocaleString()} Crowns | 🎁 ${member.donations||0} Donated`,'info');}
 setInterval(()=>{if(P.clan)updateJoinRequests();},20000);
 
 function updateClan(){
@@ -6438,8 +7132,11 @@ if(won&&crowns>=2){
     if(chestAwarded)bonusItems.push({icon:chestAwarded.icon,amount:1,label:chestAwarded.name,rarity:'epic'});
     showVictoryLootDrop(gold,gems,bonusItems);
   }
-  // 10% chance for treasure hunt bonus
-  if(Math.random()<0.10)setTimeout(()=>showTreasureHunt(),3000);
+  // 10% chance for FREE treasure hunt bonus after win
+  if(Math.random()<0.10){
+    showNotify('🎁 BONUS!\nYou won a FREE Treasure Hunt!', 'epic');
+    setTimeout(()=>showTreasureHunt(true),3000);
+  }
 }
 const ov=document.createElement('div');ov.className='result-overlay';
 const wcGained=won?Math.floor(Math.random()*3)+1:0;
@@ -7067,9 +7764,49 @@ let treasureGameActive=false;
 let treasurePicks=0;
 let treasureTotal={gold:0,gems:0};
 let treasureRevealed=[];
+const TREASURE_HUNT_COST = 300; // Gems required to play
 
-function showTreasureHunt(){
+function showTreasureHunt(freePlay = false){
   if(document.querySelector('.treasure-overlay'))return;
+
+  // Check if player has enough gems (unless free play from win bonus)
+  if (!freePlay && P.gems < TREASURE_HUNT_COST) {
+    showNotify(`💎 Not Enough Gems!\nYou need ${TREASURE_HUNT_COST} gems to play Treasure Hunt.\nYou have: ${P.gems} gems`, 'error');
+    return;
+  }
+
+  // Show confirmation if not free play
+  if (!freePlay) {
+    const confirmModal = document.createElement('div');
+    confirmModal.className = 'confirm-modal';
+    confirmModal.innerHTML = `
+      <div class="confirm-box" style="border-color:#ffd700">
+        <div style="font-size:40px;margin-bottom:10px">📦</div>
+        <div style="font-size:16px;font-weight:900;margin-bottom:5px">TREASURE HUNT</div>
+        <div style="font-size:12px;color:#888;margin-bottom:15px">Pick 3 chests to find hidden treasures!</div>
+        <div style="font-size:14px;margin-bottom:15px">
+          <span style="color:#e74c3c;font-weight:900">Cost: ${TREASURE_HUNT_COST} 💎</span>
+          <div style="font-size:11px;color:#888;margin-top:5px">Your gems: ${P.gems} 💎</div>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:center">
+          <button onclick="this.closest('.confirm-modal').remove()" style="padding:10px 20px;background:linear-gradient(180deg,#555,#333);border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer">Cancel</button>
+          <button onclick="this.closest('.confirm-modal').remove();startTreasureHunt()" style="padding:10px 20px;background:linear-gradient(180deg,#27ae60,#1e8449);border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer">Play (${TREASURE_HUNT_COST}💎)</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(confirmModal);
+    return;
+  }
+
+  startTreasureHunt();
+}
+
+function startTreasureHunt(){
+  // Deduct gems
+  P.gems -= TREASURE_HUNT_COST;
+  save();
+  updatePlay();
+
   treasureGameActive=true;
   treasurePicks=3;
   treasureTotal={gold:0,gems:0};
@@ -7174,10 +7911,11 @@ function closeTreasureHunt(){
   treasureGameActive=false;
 }
 
-// Trigger treasure hunt randomly after wins (10% chance)
+// Trigger FREE treasure hunt randomly after wins (10% chance)
 function tryTriggerTreasure(){
   if(Math.random()<0.10){
-    setTimeout(()=>showTreasureHunt(),500);
+    showNotify('🎁 BONUS!\nYou won a FREE Treasure Hunt!', 'epic');
+    setTimeout(()=>showTreasureHunt(true),500); // Free play from win bonus
     return true;
   }
   return false;

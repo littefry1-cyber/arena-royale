@@ -47,6 +47,13 @@ class WebSocketManager:
                                 payload = decode_token(token)
                                 if payload:
                                     player_id = payload.get('player_id')
+                                    # Check if player is banned
+                                    from database import json_db as db
+                                    player = await db.get_player(player_id)
+                                    if player and player.get('banned', False):
+                                        await self.send(ws, 'auth_error', {'error': 'Account banned', 'banned': True})
+                                        await ws.close()
+                                        continue
                                     self.connections[player_id] = ws
                                     self.subscriptions[player_id] = set()
                                     await self.send(ws, 'auth_ok', {
@@ -92,7 +99,13 @@ class WebSocketManager:
 
     async def disconnect(self, player_id: str):
         """Handle player disconnect"""
+        # Close the WebSocket connection if it exists
         if player_id in self.connections:
+            ws = self.connections[player_id]
+            try:
+                await ws.close()
+            except Exception:
+                pass
             del self.connections[player_id]
 
         # Unsubscribe from all channels

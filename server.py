@@ -30,7 +30,7 @@ from websocket.battle_sync import battle_timer_loop
 
 # Server configuration
 HOST = '0.0.0.0'  # Listen on all interfaces
-PORT = 5004
+PORT = int(os.environ.get('PORT', 5004))  # Use Railway's PORT or default to 5004
 
 
 def setup_websocket_handlers():
@@ -314,6 +314,10 @@ def setup_websocket_handlers():
 
 async def start_background_tasks(app):
     """Start background tasks"""
+    # Warm up the player cache for faster access
+    from database import json_db as db
+    await db.warm_cache()
+
     app['matchmaking_task'] = asyncio.create_task(matchmaking_loop(ws_manager))
     app['battle_timer_task'] = asyncio.create_task(battle_timer_loop(ws_manager))
     print("Background tasks started")

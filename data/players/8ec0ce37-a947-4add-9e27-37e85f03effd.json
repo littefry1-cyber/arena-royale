@@ -1,0 +1,90 @@
+{
+  "id": "8ec0ce37-a947-4add-9e27-37e85f03effd",
+  "username": "hypersniper05",
+  "password_hash": "$2b$12$TD7UAJWxt6zXzoOLMuIO6u56cHb/WWOYZ.cNTvLd7i2WbqA9bwX7y",
+  "is_guest": false,
+  "admin": false,
+  "created_at": 1767295320.806777,
+  "updated_at": 1767300045.192369,
+  "last_login": 1767299922.569239,
+  "profile": {
+    "name": "deleted",
+    "title": "rookie",
+    "tower_skin": "default"
+  },
+  "stats": {
+    "trophies": 150,
+    "elo": 1000,
+    "wins": 1,
+    "losses": 2,
+    "crowns": 4,
+    "max_streak": 1,
+    "current_streak": 0,
+    "medals": 0,
+    "medals_wins": 0,
+    "medals_losses": 0,
+    "medals_highest": 0,
+    "comp_wins": 0,
+    "comp_losses": 0,
+    "comp_trophies": 0
+  },
+  "banned": false,
+  "resources": {
+    "gold": 3,
+    "gems": 6,
+    "crystals": 2,
+    "star_points": 30
+  },
+  "cards": {
+    "unlocked": [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    "levels": {},
+    "shards": {
+      "minion": 8,
+      "healspirit": 9
+    }
+  },
+  "decks": [
+    [
+      "minion",
+      "goblin",
+      "giant",
+      "archer",
+      "bomber",
+      "knight",
+      "zap",
+      "arrows"
+    ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "current_deck": -1,
+  "clan_id": null,
+  "chests": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "battle_pass": {
+    "level": 1,
+    "xp": 0,
+    "premium": false,
+    "claimed": []
+  },
+  "trophy_road": {
+    "claimed": []
+  },
+  "battle_log": [],
+  "gold": 20
+}

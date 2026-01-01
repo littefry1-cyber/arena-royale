@@ -1,6 +1,7 @@
 """
 JSON File Database Wrapper
 Simple file-based database using JSON files for Arena Royale multiplayer
+With caching for improved performance
 """
 
 import os
@@ -10,6 +11,7 @@ import aiofiles
 from typing import Optional, Dict, List, Any
 from datetime import datetime
 import uuid
+import time
 
 # Base data directory
 DATA_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'data')
@@ -21,6 +23,62 @@ for subdir in SUBDIRS:
 
 # File locks for concurrent access
 _locks: Dict[str, asyncio.Lock] = {}
+
+# ==================== CACHING SYSTEM ====================
+# Cache players in memory to reduce file I/O
+_player_cache: Dict[str, Dict] = {}
+_username_index: Dict[str, str] = {}  # username -> player_id
+_cache_timestamps: Dict[str, float] = {}
+CACHE_TTL = 60  # Cache expires after 60 seconds
+
+def _is_cache_valid(player_id: str) -> bool:
+    """Check if cached data is still valid"""
+    if player_id not in _cache_timestamps:
+        return False
+    return time.time() - _cache_timestamps[player_id] < CACHE_TTL
+
+def _cache_player(player: Dict):
+    """Add player to cache"""
+    player_id = player['id']
+    _player_cache[player_id] = player
+    _cache_timestamps[player_id] = time.time()
+    # Update username index
+    username = player.get('username', '').lower()
+    if username:
+        _username_index[username] = player_id
+
+def _invalidate_cache(player_id: str):
+    """Remove player from cache"""
+    if player_id in _player_cache:
+        username = _player_cache[player_id].get('username', '').lower()
+        if username in _username_index:
+            del _username_index[username]
+        del _player_cache[player_id]
+    if player_id in _cache_timestamps:
+        del _cache_timestamps[player_id]
+
+async def warm_cache():
+    """Pre-load all players into cache on server startup for faster access"""
+    players_dir = os.path.join(DATA_DIR, 'players')
+    if not os.path.exists(players_dir):
+        return 0
+
+    count = 0
+    for filename in os.listdir(players_dir):
+        if filename.endswith('.json'):
+            filepath = os.path.join(players_dir, filename)
+            try:
+                async with aiofiles.open(filepath, 'r', encoding='utf-8') as f:
+                    content = await f.read()
+                    player = json.loads(content) if content else None
+                    if player:
+                        _cache_player(player)
+                        count += 1
+            except Exception as e:
+                print(f"Error caching {filename}: {e}")
+
+    print(f"Cache warmed: {count} players loaded")
+    return count
 
 def _get_lock(path: str) -> asyncio.Lock:
     """Get or create a lock for a specific file path"""
@@ -68,46 +126,84 @@ def _player_path(player_id: str) -> str:
     return os.path.join(DATA_DIR, 'players', f'{player_id}.json')
 
 async def get_player(player_id: str) -> Optional[Dict]:
-    """Get a player by ID"""
-    return await read_json(_player_path(player_id))
+    """Get a player by ID (with caching)"""
+    # Check cache first
+    if _is_cache_valid(player_id) and player_id in _player_cache:
+        return _player_cache[player_id]
+
+    # Load from file
+    player = await read_json(_player_path(player_id))
+    if player:
+        _cache_player(player)
+    return player
 
 async def save_player(player: Dict) -> bool:
-    """Save a player (create or update)"""
+    """Save a player (create or update) and update cache"""
     player['updated_at'] = datetime.now().timestamp()
-    return await write_json(_player_path(player['id']), player)
+    success = await write_json(_player_path(player['id']), player)
+    if success:
+        _cache_player(player)
+    return success
 
 async def delete_player(player_id: str) -> bool:
-    """Delete a player"""
+    """Delete a player and remove from cache"""
+    _invalidate_cache(player_id)
     return await delete_json(_player_path(player_id))
 
 async def find_player_by_username(username: str) -> Optional[Dict]:
-    """Find a player by username (case-insensitive)"""
+    """Find a player by username (case-insensitive) with index optimization"""
     username_lower = username.lower()
-    players_dir = os.path.join(DATA_DIR, 'players')
 
+    # Check username index first (fast lookup)
+    if username_lower in _username_index:
+        player_id = _username_index[username_lower]
+        return await get_player(player_id)
+
+    # Fallback to scanning files
+    players_dir = os.path.join(DATA_DIR, 'players')
     if not os.path.exists(players_dir):
         return None
 
     for filename in os.listdir(players_dir):
         if filename.endswith('.json'):
             player = await read_json(os.path.join(players_dir, filename))
-            if player and player.get('username', '').lower() == username_lower:
-                return player
+            if player:
+                _cache_player(player)  # Cache while scanning
+                if player.get('username', '').lower() == username_lower:
+                    return player
     return None
 
-async def get_all_players() -> List[Dict]:
-    """Get all players (for leaderboards)"""
+async def get_all_players(include_banned: bool = False) -> List[Dict]:
+    """Get all players (for leaderboards) with caching
+
+    Args:
+        include_banned: If True, include banned players (for admin use)
+    """
     players = []
     players_dir = os.path.join(DATA_DIR, 'players')
 
     if not os.path.exists(players_dir):
         return players
 
-    for filename in os.listdir(players_dir):
-        if filename.endswith('.json'):
+    # Use concurrent file reading for better performance
+    filenames = [f for f in os.listdir(players_dir) if f.endswith('.json')]
+
+    for filename in filenames:
+        player_id = filename.replace('.json', '')
+
+        # Try cache first
+        if _is_cache_valid(player_id) and player_id in _player_cache:
+            player = _player_cache[player_id]
+        else:
             player = await read_json(os.path.join(players_dir, filename))
-            if player and not player.get('is_guest', False):
+            if player:
+                _cache_player(player)
+
+        # Exclude guests, and exclude banned players unless include_banned is True
+        if player and not player.get('is_guest', False):
+            if include_banned or not player.get('banned', False):
                 players.append(player)
+
     return players
 
 async def get_leaderboard(sort_by: str = 'trophies', limit: int = 100) -> List[Dict]:
@@ -338,6 +434,8 @@ def create_player_template(player_id: str, username: str, password_hash: str, is
             'comp_losses': 0,
             'comp_trophies': 0,
         },
+
+        'banned': False,  # Account ban status
 
         'resources': {
             'gold': 1000,

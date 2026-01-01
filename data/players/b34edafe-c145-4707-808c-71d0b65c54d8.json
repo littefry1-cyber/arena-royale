@@ -1,0 +1,86 @@
+{
+  "id": "b34edafe-c145-4707-808c-71d0b65c54d8",
+  "username": "test",
+  "password_hash": "$2b$12$A97w.c33N2.gZVtGzrtBUOtPyD8KbU/90mUATV3Ze2q5QjjyJZvMa",
+  "is_guest": false,
+  "admin": false,
+  "created_at": 1767227168.876709,
+  "updated_at": 1767298279.21672,
+  "last_login": 1767227404.911575,
+  "profile": {
+    "name": "test",
+    "title": "rookie",
+    "tower_skin": "default"
+  },
+  "stats": {
+    "trophies": 145,
+    "elo": 1000,
+    "wins": 1,
+    "losses": 1,
+    "crowns": 3,
+    "max_streak": 1,
+    "current_streak": 0,
+    "medals": 0,
+    "medals_wins": 0,
+    "medals_losses": 0,
+    "medals_highest": 0,
+    "comp_wins": 0,
+    "comp_losses": 0,
+    "comp_trophies": 0
+  },
+  "resources": {
+    "gold": 7250,
+    "gems": 103,
+    "crystals": 0,
+    "star_points": 30
+  },
+  "cards": {
+    "unlocked": [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    "levels": {},
+    "shards": {}
+  },
+  "decks": [
+    [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "current_deck": 0,
+  "clan_id": null,
+  "chests": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "battle_pass": {
+    "level": 1,
+    "xp": 0,
+    "premium": false,
+    "claimed": []
+  },
+  "trophy_road": {
+    "claimed": []
+  },
+  "battle_log": [],
+  "banned": true
+}
