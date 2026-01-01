@@ -791,6 +791,40 @@
     .treasure-btn{background:linear-gradient(180deg,#27ae60,#1e8449);border:none;border-radius:12px;padding:12px 40px;font-family:'Lilita One',cursive;font-size:18px;color:#fff;cursor:pointer;box-shadow:0 4px 0 #145a32;transition:all 0.2s}
     .treasure-btn:hover{transform:translateY(-2px);box-shadow:0 6px 0 #145a32}
     .treasure-btn:disabled{opacity:0.5;cursor:not-allowed}
+
+    /* ===== LOGIN SCREEN STYLES ===== */
+    .login-screen{position:fixed;inset:0;background:linear-gradient(180deg,#0d1b2a,#1b2838,#0d1b2a);z-index:9999;display:flex;align-items:center;justify-content:center}
+    .login-screen.hidden{display:none}
+    .login-box{background:linear-gradient(145deg,#1b2838,#0d1b2a);border:3px solid var(--gold);border-radius:20px;padding:30px;width:90%;max-width:320px;text-align:center}
+    .login-box .game-logo{font-family:'Lilita One',cursive;font-size:32px;background:linear-gradient(180deg,#ffd700,#ff8c00);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:5px}
+    .login-box .version{font-size:11px;color:#6b7c8a;margin-bottom:20px}
+    .login-box .subtitle{font-size:12px;color:#2ecc71;font-weight:800;margin-bottom:15px}
+    .login-box input{width:100%;padding:12px 15px;margin-bottom:10px;background:#0d1b2a;border:2px solid #333;border-radius:10px;color:#fff;font-size:14px;font-family:'Nunito',sans-serif}
+    .login-box input:focus{outline:none;border-color:var(--gold)}
+    .login-box input::placeholder{color:#6b7c8a}
+    .login-btn{width:100%;padding:12px;margin-bottom:8px;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;font-family:'Nunito',sans-serif;transition:transform 0.2s}
+    .login-btn:hover{transform:scale(1.02)}
+    .login-btn.primary{background:linear-gradient(180deg,#4ade80,#22c55e);color:#fff;box-shadow:0 4px 0 #15803d}
+    .login-btn.secondary{background:linear-gradient(180deg,#3b82f6,#2563eb);color:#fff;box-shadow:0 4px 0 #1d4ed8}
+    .login-btn.guest{background:linear-gradient(180deg,#6b7280,#4b5563);color:#fff;box-shadow:0 4px 0 #374151}
+    .login-divider{display:flex;align-items:center;margin:15px 0;color:#6b7c8a;font-size:12px}
+    .login-divider::before,.login-divider::after{content:'';flex:1;height:1px;background:#333}
+    .login-divider span{padding:0 10px}
+    .login-warning{font-size:10px;color:#f59e0b;margin-top:5px}
+    .login-error{color:#ef4444;font-size:12px;margin-top:10px;min-height:18px}
+    .connection-status{display:flex;align-items:center;justify-content:center;gap:6px;margin-top:15px;font-size:11px;color:#6b7c8a}
+    .status-dot{width:8px;height:8px;border-radius:50%;background:#ef4444}
+    .status-dot.online{background:#22c55e;animation:statusPulse 2s infinite}
+    .status-dot.connecting{background:#f59e0b;animation:statusPulse 1s infinite}
+    @keyframes statusPulse{0%,100%{opacity:1}50%{opacity:0.5}}
+    .online-indicator{position:fixed;top:10px;right:10px;display:flex;align-items:center;gap:5px;background:rgba(0,0,0,0.5);padding:5px 10px;border-radius:20px;font-size:10px;z-index:100}
+    .matchmaking-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .matchmaking-overlay.hidden{display:none}
+    .matchmaking-spinner{width:60px;height:60px;border:4px solid #333;border-top-color:var(--gold);border-radius:50%;animation:spin 1s linear infinite;margin-bottom:20px}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .matchmaking-text{font-size:18px;font-weight:800;color:#fff;margin-bottom:10px}
+    .matchmaking-status{font-size:12px;color:#6b7c8a}
+    .matchmaking-cancel{margin-top:20px;padding:10px 30px;background:#ef4444;border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer}
   </style>
 </head>
 <body>
@@ -803,6 +837,52 @@
     </linearGradient>
   </defs>
 </svg>
+<!-- Login Screen -->
+<div id="loginScreen" class="login-screen">
+  <div class="login-box">
+    <div class="game-logo">ARENA ROYALE</div>
+    <div class="version">Multiplayer Edition v2.4.0</div>
+    <div class="subtitle">ONLINE MULTIPLAYER</div>
+
+    <div id="loginForm">
+      <input type="text" id="loginUsername" placeholder="Username" maxlength="20" autocomplete="username">
+      <input type="password" id="loginPassword" placeholder="Password" autocomplete="current-password">
+      <button class="login-btn primary" onclick="doLogin()">LOGIN</button>
+      <button class="login-btn secondary" onclick="showRegisterForm()">CREATE ACCOUNT</button>
+      <div class="login-divider"><span>or</span></div>
+      <button class="login-btn guest" onclick="doGuestLogin()">PLAY AS GUEST</button>
+      <div class="login-warning">Guest progress may be lost without an account!</div>
+    </div>
+
+    <div id="registerForm" style="display:none">
+      <input type="text" id="regUsername" placeholder="Choose Username" maxlength="20" autocomplete="username">
+      <input type="password" id="regPassword" placeholder="Choose Password (6+ chars)" autocomplete="new-password">
+      <input type="password" id="regConfirm" placeholder="Confirm Password" autocomplete="new-password">
+      <button class="login-btn primary" onclick="doRegister()">CREATE ACCOUNT</button>
+      <button class="login-btn guest" onclick="showLoginForm()">BACK TO LOGIN</button>
+    </div>
+
+    <div id="loginError" class="login-error"></div>
+    <div id="connectionStatus" class="connection-status">
+      <span class="status-dot connecting"></span> Connecting to server...
+    </div>
+  </div>
+</div>
+
+<!-- Matchmaking Overlay -->
+<div id="matchmakingOverlay" class="matchmaking-overlay hidden">
+  <div class="matchmaking-spinner"></div>
+  <div class="matchmaking-text">Finding Opponent...</div>
+  <div class="matchmaking-status" id="matchmakingStatus">Searching for players...</div>
+  <button class="matchmaking-cancel" onclick="cancelMatchmaking()">CANCEL</button>
+</div>
+
+<!-- Online Status Indicator -->
+<div id="onlineIndicator" class="online-indicator" style="display:none">
+  <span class="status-dot online"></span>
+  <span id="onlineCount">0 Online</span>
+</div>
+
 <div class="app">
   <div class="tabs">
     <div class="tab play-tab on" id="tabPlay">
@@ -1675,6 +1755,518 @@
   </div>
 </div>
   <script>
+// ========== MULTIPLAYER NETWORK LAYER ==========
+const SERVER_URL = 'http://localhost:5004';
+const WS_URL = 'ws://localhost:5004/ws';
+
+const NET = {
+  token: null,
+  ws: null,
+  playerId: null,
+  isOnline: false,
+  isConnecting: false,
+  reconnectAttempts: 0,
+  maxReconnectAttempts: 5,
+  messageHandlers: {},
+  syncInterval: null,
+
+  // Initialize network connection
+  async init() {
+    this.updateConnectionStatus('connecting');
+    const savedToken = localStorage.getItem('arena_token');
+    if (savedToken) {
+      this.token = savedToken;
+      try {
+        const result = await this.api('/api/auth/validate', 'POST');
+        if (result.valid) {
+          this.playerId = result.player.id;
+          await this.connectWebSocket();
+          await this.loadPlayerData(result.player);
+          this.hideLoginScreen();
+          this.startSyncInterval();
+          return true;
+        }
+      } catch (e) {
+        console.log('Token validation failed:', e);
+        localStorage.removeItem('arena_token');
+        this.token = null;
+      }
+    }
+    this.updateConnectionStatus('offline');
+    return false;
+  },
+
+  // REST API calls
+  async api(endpoint, method = 'GET', data = null) {
+    const options = {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+      }
+    };
+    if (this.token) {
+      options.headers['Authorization'] = `Bearer ${this.token}`;
+    }
+    if (data) options.body = JSON.stringify(data);
+
+    const response = await fetch(`${SERVER_URL}${endpoint}`, options);
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'Request failed');
+    }
+    return result;
+  },
+
+  // WebSocket connection
+  async connectWebSocket() {
+    return new Promise((resolve, reject) => {
+      try {
+        this.ws = new WebSocket(WS_URL);
+
+        this.ws.onopen = () => {
+          this.ws.send(JSON.stringify({ type: 'auth', data: { token: this.token } }));
+        };
+
+        this.ws.onmessage = (event) => {
+          try {
+            const msg = JSON.parse(event.data);
+            if (msg.type === 'auth_ok') {
+              this.isOnline = true;
+              this.isConnecting = false;
+              this.reconnectAttempts = 0;
+              this.updateConnectionStatus('online');
+              this.updateOnlineIndicator();
+              resolve();
+            } else if (msg.type === 'auth_error') {
+              this.updateConnectionStatus('offline');
+              reject(new Error(msg.data.error));
+            } else if (this.messageHandlers[msg.type]) {
+              this.messageHandlers[msg.type](msg.data);
+            }
+          } catch (e) {
+            console.error('WebSocket message error:', e);
+          }
+        };
+
+        this.ws.onclose = () => {
+          this.isOnline = false;
+          this.updateConnectionStatus('offline');
+          this.attemptReconnect();
+        };
+
+        this.ws.onerror = (err) => {
+          console.error('WebSocket error:', err);
+          this.updateConnectionStatus('offline');
+        };
+
+        // Timeout after 5 seconds
+        setTimeout(() => {
+          if (this.isConnecting) {
+            reject(new Error('Connection timeout'));
+          }
+        }, 5000);
+
+      } catch (e) {
+        reject(e);
+      }
+    });
+  },
+
+  attemptReconnect() {
+    if (this.reconnectAttempts < this.maxReconnectAttempts && this.token) {
+      this.reconnectAttempts++;
+      console.log(`Reconnecting... attempt ${this.reconnectAttempts}`);
+      setTimeout(() => {
+        this.connectWebSocket().catch(console.error);
+      }, 2000 * this.reconnectAttempts);
+    }
+  },
+
+  send(type, data) {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      this.ws.send(JSON.stringify({ type, data, token: this.token }));
+    }
+  },
+
+  on(type, handler) {
+    this.messageHandlers[type] = handler;
+  },
+
+  // Auth methods
+  async register(username, password) {
+    const result = await this.api('/api/auth/register', 'POST', { username, password });
+    this.token = result.token;
+    this.playerId = result.player.id;
+    localStorage.setItem('arena_token', this.token);
+    await this.connectWebSocket();
+    await this.loadPlayerData(result.player);
+    this.startSyncInterval();
+    return result.player;
+  },
+
+  async login(username, password) {
+    const result = await this.api('/api/auth/login', 'POST', { username, password });
+    this.token = result.token;
+    this.playerId = result.player.id;
+    localStorage.setItem('arena_token', this.token);
+    await this.connectWebSocket();
+    await this.loadPlayerData(result.player);
+    this.startSyncInterval();
+    return result.player;
+  },
+
+  async guestLogin() {
+    const result = await this.api('/api/auth/guest', 'POST');
+    this.token = result.token;
+    this.playerId = result.player.id;
+    localStorage.setItem('arena_token', this.token);
+    localStorage.setItem('arena_guest', 'true');
+    await this.connectWebSocket();
+    await this.loadPlayerData(result.player);
+    this.startSyncInterval();
+    return result.player;
+  },
+
+  logout() {
+    this.token = null;
+    this.playerId = null;
+    this.isOnline = false;
+    localStorage.removeItem('arena_token');
+    localStorage.removeItem('arena_guest');
+    if (this.ws) this.ws.close();
+    if (this.syncInterval) clearInterval(this.syncInterval);
+    showLoginScreen();
+  },
+
+  // Load player data from server
+  async loadPlayerData(serverPlayer) {
+    // Merge server data with local format
+    if (serverPlayer.profile) {
+      P.name = serverPlayer.profile.name || P.name;
+    }
+    if (serverPlayer.stats) {
+      P.tr = serverPlayer.stats.trophies || 0;
+      P.wins = serverPlayer.stats.wins || 0;
+      P.losses = serverPlayer.stats.losses || 0;
+      P.crowns = serverPlayer.stats.crowns || 0;
+      P.maxStr = serverPlayer.stats.max_streak || 0;
+      P.medals = serverPlayer.stats.medals || 0;
+      P.compWins = serverPlayer.stats.comp_wins || 0;
+      P.compLosses = serverPlayer.stats.comp_losses || 0;
+      P.compTrophies = serverPlayer.stats.comp_trophies || 0;
+    }
+    if (serverPlayer.resources) {
+      P.gold = serverPlayer.resources.gold || 0;
+      P.gems = serverPlayer.resources.gems || 0;
+      P.crystals = serverPlayer.resources.crystals || 0;
+      P.starPoints = serverPlayer.resources.star_points || 0;
+    }
+    if (serverPlayer.cards) {
+      if (serverPlayer.cards.unlocked) P.unlocked = serverPlayer.cards.unlocked;
+      if (serverPlayer.cards.levels) P.lvls = serverPlayer.cards.levels;
+      if (serverPlayer.cards.shards) P.shards = serverPlayer.cards.shards;
+    }
+    if (serverPlayer.decks) {
+      P.decks = serverPlayer.decks;
+      P.deck = P.decks[serverPlayer.current_deck || 0] || P.deck;
+    }
+    if (serverPlayer.clan_id) {
+      P.clan = { id: serverPlayer.clan_id };
+    }
+    save();
+  },
+
+  // Sync player data to server
+  async syncPlayer() {
+    if (!this.isOnline || !this.playerId) return;
+    try {
+      const syncData = {
+        stats: {
+          trophies: P.tr || 0,
+          wins: P.wins || 0,
+          losses: P.losses || 0,
+          crowns: P.crowns || 0,
+          max_streak: P.maxStr || 0,
+          medals: P.medals || 0,
+          comp_wins: P.compWins || 0,
+          comp_losses: P.compLosses || 0,
+          comp_trophies: P.compTrophies || 0,
+        },
+        resources: {
+          gold: P.gold || 0,
+          gems: P.gems || 0,
+          crystals: P.crystals || 0,
+          star_points: P.starPoints || 0,
+        },
+        cards: {
+          unlocked: P.unlocked || [],
+          levels: P.lvls || {},
+          shards: P.shards || {},
+        },
+        decks: P.decks || [],
+        current_deck: P.decks ? P.decks.indexOf(P.deck) : 0,
+        profile: {
+          name: P.name,
+        }
+      };
+      await this.api(`/api/player/${this.playerId}/sync`, 'POST', syncData);
+    } catch (e) {
+      console.error('Sync failed:', e);
+    }
+  },
+
+  startSyncInterval() {
+    if (this.syncInterval) clearInterval(this.syncInterval);
+    this.syncInterval = setInterval(() => {
+      this.syncPlayer();
+    }, 30000); // Sync every 30 seconds
+  },
+
+  updateConnectionStatus(status) {
+    const el = document.getElementById('connectionStatus');
+    if (!el) return;
+    if (status === 'online') {
+      el.innerHTML = '<span class="status-dot online"></span> Connected';
+    } else if (status === 'connecting') {
+      el.innerHTML = '<span class="status-dot connecting"></span> Connecting...';
+    } else {
+      el.innerHTML = '<span class="status-dot"></span> Offline';
+    }
+  },
+
+  updateOnlineIndicator() {
+    const indicator = document.getElementById('onlineIndicator');
+    if (indicator) {
+      indicator.style.display = this.isOnline ? 'flex' : 'none';
+    }
+  },
+
+  hideLoginScreen() {
+    const screen = document.getElementById('loginScreen');
+    if (screen) screen.classList.add('hidden');
+  },
+
+  showLoginScreen() {
+    const screen = document.getElementById('loginScreen');
+    if (screen) screen.classList.remove('hidden');
+  }
+};
+
+// Setup WebSocket message handlers
+NET.on('queue_status', (data) => {
+  const status = document.getElementById('matchmakingStatus');
+  if (status) {
+    status.textContent = `Position: ${data.position} | ~${Math.round(data.estimated_wait)}s wait`;
+  }
+});
+
+NET.on('match_found', (data) => {
+  hideMatchmakingOverlay();
+  startMultiplayerBattle(data);
+});
+
+NET.on('battle_start', (data) => {
+  console.log('Battle started:', data);
+  if (typeof B !== 'undefined' && B.isMultiplayer) {
+    B.startTime = data.start_time;
+    B.duration = data.duration;
+  }
+});
+
+NET.on('battle_action', (data) => {
+  if (typeof B !== 'undefined' && B.isMultiplayer) {
+    handleOpponentAction(data);
+  }
+});
+
+NET.on('battle_state', (data) => {
+  if (typeof B !== 'undefined' && B.isMultiplayer) {
+    syncBattleState(data);
+  }
+});
+
+NET.on('battle_result', async (data) => {
+  if (typeof B !== 'undefined') {
+    B.on = false;
+    await applyBattleResult(data.your_result);
+    showBattleResultScreen(data);
+  }
+});
+
+NET.on('chat_message', (data) => {
+  if (data.channel === 'clan' && P.clan) {
+    if (!P.clan.chatHistory) P.clan.chatHistory = [];
+    P.clan.chatHistory.push({
+      sender: data.sender_name,
+      msg: data.message,
+      time: data.timestamp * 1000
+    });
+    if (P.clan.chatHistory.length > 100) P.clan.chatHistory.shift();
+    if (typeof updateClanChat === 'function') updateClanChat();
+  }
+});
+
+// Login/Register Functions
+function showLoginForm() {
+  document.getElementById('loginForm').style.display = 'block';
+  document.getElementById('registerForm').style.display = 'none';
+  document.getElementById('loginError').textContent = '';
+}
+
+function showRegisterForm() {
+  document.getElementById('loginForm').style.display = 'none';
+  document.getElementById('registerForm').style.display = 'block';
+  document.getElementById('loginError').textContent = '';
+}
+
+function showLoginScreen() {
+  NET.showLoginScreen();
+  showLoginForm();
+}
+
+async function doLogin() {
+  const username = document.getElementById('loginUsername').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (!username || !password) {
+    errorEl.textContent = 'Please enter username and password';
+    return;
+  }
+
+  try {
+    errorEl.textContent = '';
+    NET.updateConnectionStatus('connecting');
+    await NET.login(username, password);
+    NET.hideLoginScreen();
+    showNotify('Welcome back, ' + P.name + '!', 'success');
+    if (typeof updateAll === 'function') updateAll();
+  } catch (e) {
+    errorEl.textContent = e.message || 'Login failed';
+    NET.updateConnectionStatus('offline');
+  }
+}
+
+async function doRegister() {
+  const username = document.getElementById('regUsername').value.trim();
+  const password = document.getElementById('regPassword').value;
+  const confirm = document.getElementById('regConfirm').value;
+  const errorEl = document.getElementById('loginError');
+
+  if (!username || !password) {
+    errorEl.textContent = 'Please fill in all fields';
+    return;
+  }
+  if (password !== confirm) {
+    errorEl.textContent = 'Passwords do not match';
+    return;
+  }
+  if (password.length < 6) {
+    errorEl.textContent = 'Password must be at least 6 characters';
+    return;
+  }
+
+  try {
+    errorEl.textContent = '';
+    NET.updateConnectionStatus('connecting');
+    await NET.register(username, password);
+    NET.hideLoginScreen();
+    showNotify('Account created! Welcome, ' + P.name + '!', 'success');
+    if (typeof updateAll === 'function') updateAll();
+  } catch (e) {
+    errorEl.textContent = e.message || 'Registration failed';
+    NET.updateConnectionStatus('offline');
+  }
+}
+
+async function doGuestLogin() {
+  const errorEl = document.getElementById('loginError');
+  try {
+    errorEl.textContent = '';
+    NET.updateConnectionStatus('connecting');
+    await NET.guestLogin();
+    NET.hideLoginScreen();
+    showNotify('Playing as guest. Create an account to save progress!', 'info');
+    if (typeof updateAll === 'function') updateAll();
+  } catch (e) {
+    errorEl.textContent = e.message || 'Failed to connect';
+    NET.updateConnectionStatus('offline');
+  }
+}
+
+// Matchmaking UI
+function showMatchmakingOverlay() {
+  document.getElementById('matchmakingOverlay').classList.remove('hidden');
+}
+
+function hideMatchmakingOverlay() {
+  document.getElementById('matchmakingOverlay').classList.add('hidden');
+}
+
+function cancelMatchmaking() {
+  NET.send('queue_leave', {});
+  hideMatchmakingOverlay();
+}
+
+// Multiplayer battle functions
+function startMultiplayerBattle(matchData) {
+  // Store opponent info
+  window.multiplayerOpponent = matchData.opponent;
+  window.multiplayerBattleId = matchData.battle_id;
+  window.multiplayerRole = matchData.you_are;
+
+  // Start battle with opponent data
+  if (typeof startBattleWithOpponent === 'function') {
+    startBattleWithOpponent(matchData);
+  }
+}
+
+function handleOpponentAction(data) {
+  // Handle opponent's action in battle
+  console.log('Opponent action:', data);
+}
+
+function syncBattleState(data) {
+  // Sync tower HP and crowns from server
+  console.log('Battle state sync:', data);
+}
+
+async function applyBattleResult(result) {
+  P.tr = Math.max(0, (P.tr || 0) + (result.trophy_change || 0));
+  P.gold = (P.gold || 0) + (result.gold_earned || 0);
+  if (result.won) {
+    P.wins = (P.wins || 0) + 1;
+  } else {
+    P.losses = (P.losses || 0) + 1;
+  }
+  P.crowns = (P.crowns || 0) + (result.crowns || 0);
+  save();
+  await NET.syncPlayer();
+}
+
+function showBattleResultScreen(data) {
+  // Show battle result (reuse existing battle end UI)
+  const result = data.your_result;
+  if (result.won) {
+    showNotify(`Victory! +${result.trophy_change} trophies, +${result.gold_earned} gold`, 'success');
+  } else {
+    showNotify(`Defeat! ${result.trophy_change} trophies`, 'error');
+  }
+}
+
+// Initialize network on page load
+window.addEventListener('DOMContentLoaded', async () => {
+  try {
+    const loggedIn = await NET.init();
+    if (!loggedIn) {
+      NET.showLoginScreen();
+    }
+  } catch (e) {
+    console.error('Network init failed:', e);
+    NET.showLoginScreen();
+  }
+});
+
 // In-Game Toast Notification System
 function showNotify(message, type = 'default', icon = null, duration = 3500) {
   const container = document.getElementById('toastContainer');
@@ -2148,7 +2740,36 @@ function buyStarItem(item){
 function updateRoad(){const container=document.getElementById('roadContainer');container.innerHTML='<div class="road-line"></div>';TROPHY_ROAD.forEach((milestone,idx)=>{const claimed=P.roadClaimed.includes(milestone.tr),canClaim=P.tr>=milestone.tr&&!claimed,locked=P.tr<milestone.tr;const div=document.createElement('div');div.className='road-milestone'+(claimed?' claimed':'')+(canClaim?' current':'')+(locked?' locked':'');div.innerHTML=`<div class="road-icon">${milestone.icon}</div><div class="road-info"><div class="road-trophies">🏆 ${milestone.tr.toLocaleString()}</div><div class="road-reward">${milestone.desc}</div></div>${claimed?'<div class="road-claimed">✅ CLAIMED</div>':canClaim?`<button class="road-claim-btn" onclick="claimRoadReward(${idx})">CLAIM</button>`:''}`;container.appendChild(div);});}
 function claimRoadReward(idx){const milestone=TROPHY_ROAD[idx];if(P.tr<milestone.tr||P.roadClaimed.includes(milestone.tr))return;P.roadClaimed.push(milestone.tr);const r=milestone.reward;if(r.gold)P.gold+=r.gold;if(r.gems)P.gems+=r.gems;if(r.chest){const chestType=CHEST_TYPES.find(t=>t.id===r.chest);addChest(chestType);}if(r.shards){const cards=CARDS.filter(c=>c.rarity===r.shards.rarity),card=cards[Math.floor(Math.random()*cards.length)];P.shards[card.id]=(P.shards[card.id]||0)+r.shards.amount;const needed=getUpgradeCost(1,card.rarity);if(P.shards[card.id]>=needed&&!P.unlocked.includes(card.id))P.unlocked.push(card.id);}save();updateRoad();updateChests();updateCards();updateShop();}
 
-function updateLeaderboard(){const input=document.getElementById('playerNameInput');if(input)input.value=P.name;const playerTitle=getCurrentTitle();const lb=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false,title:playerTitle}];lb.sort((a,b)=>b.trophies-a.trophies);const top130=lb.slice(0,130);const el=document.getElementById('lbList');el.innerHTML='';const botTitles=['🐣','⚔️','🥊','🎖️','💎','🏅','🥉','🥈','🥇','🏆','👑','🌟'];top130.forEach((p,i)=>{const rank=i+1,div=document.createElement('div');div.className='lb-row'+(!p.isBot?' you':'')+(rank<=3?' top3':'');const titleIcon=p.isBot?botTitles[Math.floor(p.trophies/5000)%botTitles.length]:p.title.icon;div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${titleIcon}</span>${p.name}${!p.isBot?' (YOU)':''}</div><div class="lb-trophies">🏆 ${p.trophies.toLocaleString()}${p.change>0?'<span class="arrow up">⬆️</span>':p.change<0?'<span class="arrow down">⬇️</span>':''}</div>`;el.appendChild(div);if(p.isBot) p.change=0;});const playerInTop=top130.some(p=>!p.isBot);if(!playerInTop){const allSorted=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false}].sort((a,b)=>b.trophies-a.trophies);const playerRank=allSorted.findIndex(p=>!p.isBot)+1;const div=document.createElement('div');div.className='lb-row you';div.style.marginTop='12px';div.innerHTML=`<div class="lb-rank">#${playerRank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${playerTitle.icon}</span>${P.name} (YOU)</div><div class="lb-trophies">🏆 ${P.tr.toLocaleString()}</div>`;el.appendChild(div);}}
+async function updateLeaderboard(){
+const input=document.getElementById('playerNameInput');if(input)input.value=P.name;
+const el=document.getElementById('lbList');
+const playerTitle=getCurrentTitle();
+
+// Try to fetch real leaderboard if online
+if(NET.isOnline){
+  try{
+    const data=await NET.api('/api/leaderboard/trophies?limit=130');
+    el.innerHTML='';
+    const botTitles=['🐣','⚔️','🥊','🎖️','💎','🏅','🥉','🥈','🥇','🏆','👑','🌟'];
+    data.players.forEach((p,i)=>{
+      const rank=i+1,div=document.createElement('div');
+      const isMe=p.id===NET.playerId;
+      div.className='lb-row'+(isMe?' you':'')+(rank<=3?' top3':'');
+      const titleIcon=botTitles[Math.floor(p.trophies/5000)%botTitles.length];
+      div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${titleIcon}</span>${p.name}${isMe?' (YOU)':''}</div><div class="lb-trophies">🏆 ${p.trophies.toLocaleString()}</div>`;
+      el.appendChild(div);
+    });
+    // Show player rank if not in top 130
+    if(data.player_rank>130){
+      const div=document.createElement('div');div.className='lb-row you';div.style.marginTop='12px';
+      div.innerHTML=`<div class="lb-rank">#${data.player_rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${playerTitle.icon}</span>${P.name} (YOU)</div><div class="lb-trophies">🏆 ${P.tr.toLocaleString()}</div>`;
+      el.appendChild(div);
+    }
+    return;
+  }catch(e){console.warn('Failed to fetch leaderboard:',e);}
+}
+// Fallback to local bots if offline
+const lb=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false,title:playerTitle}];lb.sort((a,b)=>b.trophies-a.trophies);const top130=lb.slice(0,130);el.innerHTML='';const botTitles=['🐣','⚔️','🥊','🎖️','💎','🏅','🥉','🥈','🥇','🏆','👑','🌟'];top130.forEach((p,i)=>{const rank=i+1,div=document.createElement('div');div.className='lb-row'+(!p.isBot?' you':'')+(rank<=3?' top3':'');const titleIcon=p.isBot?botTitles[Math.floor(p.trophies/5000)%botTitles.length]:p.title.icon;div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${titleIcon}</span>${p.name}${!p.isBot?' (YOU)':''}</div><div class="lb-trophies">🏆 ${p.trophies.toLocaleString()}${p.change>0?'<span class="arrow up">⬆️</span>':p.change<0?'<span class="arrow down">⬇️</span>':''}</div>`;el.appendChild(div);if(p.isBot) p.change=0;});const playerInTop=top130.some(p=>!p.isBot);if(!playerInTop){const allSorted=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false}].sort((a,b)=>b.trophies-a.trophies);const playerRank=allSorted.findIndex(p=>!p.isBot)+1;const div=document.createElement('div');div.className='lb-row you';div.style.marginTop='12px';div.innerHTML=`<div class="lb-rank">#${playerRank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${playerTitle.icon}</span>${P.name} (YOU)</div><div class="lb-trophies">🏆 ${P.tr.toLocaleString()}</div>`;el.appendChild(div);}}
 
 // Medals Leaderboard
 function initMedalsBots(){
@@ -2297,7 +2918,20 @@ function resetGame(){
     updateStats();
 }
 
-function startBattle(){if(P.deck.length<8)randomDeck();const arena=getArena(currentGameMode==='comp'?P.compTrophies:P.tr),botLvl=getBotLvl(currentGameMode==='comp'?P.compTrophies:P.tr),botMult=1+(Math.min(botLvl,15)-1)*0.10,botCards=CARDS.filter(c=>c.type==='troop').sort(()=>0.5-Math.random()).slice(0,8);
+function startBattle(){
+// Check if we should use real multiplayer matchmaking
+if(NET.isOnline && currentGameMode !== 'test' && currentGameMode !== 'custom'){
+  if(P.deck.length<8)randomDeck();
+  showMatchmakingOverlay();
+  NET.send('queue_join', {
+    mode: currentGameMode || 'normal',
+    trophies: currentGameMode==='comp' ? P.compTrophies : P.tr,
+    deck: P.deck
+  });
+  return; // Wait for match_found event
+}
+// Offline/test mode - use existing bot logic
+if(P.deck.length<8)randomDeck();const arena=getArena(currentGameMode==='comp'?P.compTrophies:P.tr),botLvl=getBotLvl(currentGameMode==='comp'?P.compTrophies:P.tr),botMult=1+(Math.min(botLvl,15)-1)*0.10,botCards=CARDS.filter(c=>c.type==='troop').sort(()=>0.5-Math.random()).slice(0,8);
 // Pick opponent from leaderboard based on trophy range
 const playerTr=currentGameMode==='comp'?P.compTrophies:P.tr;
 const trophyRange=500;
