@@ -90,9 +90,9 @@ async def sync_player(request: web.Request) -> web.Response:
 
         player['stats'] = server_stats
 
-    # Resources - trust client for now
-    if 'resources' in data:
-        player['resources'] = data['resources']
+    # Resources - SERVER AUTHORITATIVE (don't let client overwrite)
+    # Resources can only be changed by server-side actions (trades, rewards, etc.)
+    # Client sync is ignored to prevent overwrites from stale local data
 
     # Cards - trust client for now
     if 'cards' in data:
@@ -104,9 +104,9 @@ async def sync_player(request: web.Request) -> web.Response:
     if 'current_deck' in data:
         player['current_deck'] = data['current_deck']
 
-    # Profile
+    # Profile - name is server-authoritative to prevent sync overwrites
     if 'profile' in data:
-        for field in ['name', 'title', 'tower_skin']:
+        for field in ['title', 'tower_skin']:  # name excluded - only changeable server-side
             if field in data['profile']:
                 player['profile'][field] = data['profile'][field]
 

@@ -1535,7 +1535,7 @@
       </div>
       <div class="admin-section">
         <div class="admin-section-title">⬆️ CARDS - LEVELS</div>
-        <div class="admin-row"><input type="number" id="maxLevelInput" placeholder="Max Level" value="25" style="max-width:60px"><button class="orange full" onclick="maxAllCards()">⬆️ MAX ALL LEVELS</button></div>
+        <div class="admin-row"><input type="number" id="maxLevelInput" placeholder="Max Level" value="25" style="max-width:60px"><button class="orange full" onclick="maxAllCards()">⬆️ MAX ALL (5K 💰)</button></div>
         <div class="admin-row"><select id="levelCardSelect"></select><input type="number" id="levelInput" placeholder="Lv" min="1" style="max-width:40px"><button class="orange" onclick="setCardLevel()">SET</button></div>
       </div>
       <div class="admin-section">
@@ -1543,10 +1543,25 @@
         <div class="admin-row"><button class="pink" onclick="addShardsAll(100)">+100 ALL</button><button class="pink" onclick="addShardsAll(500)">+500 ALL</button><button class="pink" onclick="addShardsAll(1000)">+1000 ALL</button></div>
         <div class="admin-row"><select id="shardCardSelect"></select><input type="number" id="shardInput" placeholder="Amt" style="max-width:50px"><button class="pink" onclick="addShardsSingle()">ADD</button></div>
       </div>
-      <div class="admin-section">
+            <div class="admin-section">
         <div class="admin-section-title">🛤️ TROPHY ROAD</div>
         <div class="admin-row"><button class="cyan full" onclick="claimAllRoad()">✅ CLAIM ALL REWARDS</button></div>
         <div class="admin-row"><button class="orange full" onclick="resetRoad()">🔄 RESET ROAD CLAIMS</button></div>
+      </div>
+      <div class="admin-section" style="background:linear-gradient(135deg,rgba(46,204,113,0.3),rgba(39,174,96,0.3));border:2px solid #2ecc71">
+        <div class="admin-section-title">💸 SEND RESOURCES</div>
+        <div style="font-size:8px;color:#888;margin-bottom:6px;text-align:center">Send gold, gems, or other resources to another player</div>
+        <div class="admin-row"><input type="text" id="sendRecipient" placeholder="Recipient Username" style="flex:2"></div>
+        <div class="admin-row">
+          <select id="sendResourceType">
+            <option value="gold">💰 Gold</option>
+            <option value="gems">💎 Gems</option>
+            <option value="crystals">🔮 Crystals</option>
+            <option value="star_points">⭐ Star Points</option>
+          </select>
+          <input type="number" id="sendAmount" placeholder="Amount" style="max-width:80px">
+        </div>
+        <div class="admin-row"><button class="full" onclick="sendResourcesToPlayer()" style="background:linear-gradient(180deg,#2ecc71,#27ae60);color:#fff">📤 SEND</button></div>
       </div>
       <div class="admin-section">
         <div class="admin-section-title">⚔️ BATTLE SETTINGS</div>
@@ -3653,6 +3668,46 @@ async function setCrystals(){
     if(await adminUpdatePlayer({crystals:val}))showNotify(`💜 Set ${adminTargetPlayerData?.username}'s crystals to ${val}`,'success');
   }else{P.crystals=val;save();updateShop();showNotify(`💜 Crystals set to ${val}`,'success');}
 }
+async function sendResourcesToPlayer(){
+  const resourceType=document.getElementById('sendResourceType').value;
+  const amount=parseInt(document.getElementById('sendAmount').value)||0;
+  if(amount<=0){showNotify('Enter a valid amount','error');return;}
+  const resourceNames={gold:'💰 Gold',gems:'💎 Gems',crystals:'🔮 Crystals',star_points:'⭐ Star Points'};
+
+  // If admin targeting a player, add resources directly to them
+  if(adminTargetPlayerId){
+    const currentAmount=adminTargetPlayerData?.resources?.[resourceType]||0;
+    const newAmount=currentAmount+amount;
+    const updateData={};
+    updateData[resourceType]=newAmount;
+    if(await adminUpdatePlayer(updateData)){
+      showNotify(`💸 Added ${amount} ${resourceNames[resourceType]} to ${adminTargetPlayerData?.username} (now ${newAmount})`,'success');
+      document.getElementById('sendAmount').value='';
+    }
+    return;
+  }
+
+  // Otherwise transfer from self to recipient
+  const recipient=document.getElementById('sendRecipient').value.trim();
+  if(!recipient){showNotify('Enter recipient username','error');return;}
+  const myAmount=resourceType==='star_points'?P.starPoints:(P[resourceType]||0);
+  if(myAmount<amount){showNotify(`Not enough ${resourceNames[resourceType]}! You have ${myAmount}`,'error');return;}
+  try{
+    const res=await fetch(`${SERVER_URL}/api/send-resources`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+P.token},
+      body:JSON.stringify({recipient,resource:resourceType,amount})
+    });
+    const data=await res.json();
+    if(data.success){
+      if(resourceType==='star_points')P.starPoints-=amount;else P[resourceType]-=amount;
+      save();updateStats();updateShop();
+      showNotify(data.message,'success');
+      document.getElementById('sendRecipient').value='';
+      document.getElementById('sendAmount').value='';
+    }else{showNotify(data.error||'Transfer failed','error');}
+  }catch(e){showNotify('Network error','error');}
+}
 function setTrophyGain(){P.trophyGainPerWin=Math.max(0,parseInt(document.getElementById('admTrophyGain').value)||150);save();}
 async function setMedals(){
   const val=Math.max(0,parseInt(document.getElementById('admMedals').value)||0);
@@ -3696,7 +3751,13 @@ async function maxAllCards(){
   if(adminTargetPlayerId){
     const levels={};CARDS.forEach(c=>levels[c.id]=maxLvl);
     if(await adminUpdatePlayer({levels}))showNotify(`⬆️ Maxed all cards to Lv${maxLvl} for ${adminTargetPlayerData?.username}`,'success');
-  }else{CARDS.forEach(c=>{P.lvls[c.id]=maxLvl;});save();updateCards();showNotify(`⬆️ All cards set to Lv${maxLvl}`,'success');}
+  }else{
+    const cost=5000;
+    if(P.gold<cost){showNotify(`Not enough gold! Need ${cost}, you have ${P.gold}`,'error');return;}
+    if(!confirm(`Max all cards to Lv${maxLvl} for ${cost} gold?`))return;
+    P.gold-=cost;
+    CARDS.forEach(c=>{P.lvls[c.id]=maxLvl;});save();updateCards();updateShop();updateStats();showNotify(`⬆️ All cards set to Lv${maxLvl}`,'success');
+  }
 }
 async function setCardLevel(){
   const id=document.getElementById('levelCardSelect').value,lvl=Math.max(1,parseInt(document.getElementById('levelInput').value)||1);
@@ -4235,7 +4296,7 @@ case 'shadow':showDmg(t.x,t.y-12,'👻SHADOW!','#9b59b6');t.el.style.opacity='0.
 case 'storm':showDmg(t.x,t.y-12,'⛈️STORM!','#3498db');B.troops.filter(e=>e.side===enemy&&e.hp>0).slice(0,3).forEach(e=>{e.hp-=300;showDmg(e.x,e.y,'-300','#3498db');});break;
 case 'phoenix':showDmg(t.x,t.y-12,'🔥PHOENIX!','#e74c3c');t.phoenixRevive=true;break;
 case 'cloak':showDmg(t.x,t.y-12,'👑CLOAK!','#f1c40f');t.el.style.opacity='0.2';t.as*=0.5;setTimeout(()=>{if(t.el)t.el.style.opacity='1';t.as*=2;},4000);break;
-case 'summon':showDmg(t.x,t.y-12,'☠️SUMMON!','#95a5a6');const skelCard=getCard('skel');if(skelCard){for(let i=0;i<6;i++){const angle=(i/6)*Math.PI*2;const sx=t.x+Math.cos(angle)*30;const sy=t.y+Math.sin(angle)*30;spawnTroop({...skelCard,cnt:1},sx,sy,t.side,t.lane);}}break;
+case 'summon':showDmg(t.x,t.y-12,'☠️SUMMON!','#95a5a6');const skelCard=getCard('skel');if(skelCard){const summonedUnits=[];const halfDmgSkel={...skelCard,dmg:Math.floor(skelCard.dmg/2),cnt:1};for(let i=0;i<85;i++){const angle=(i/85)*Math.PI*2;const radius=50+Math.floor(i/28)*25;const sx=t.x+Math.cos(angle)*radius;const sy=t.y+Math.sin(angle)*radius;const skel=spawnTroop({...halfDmgSkel},sx,sy,t.side,t.lane);if(skel)summonedUnits.push(skel);}const queenHp=Math.floor(t.maxHp/2);const queen=spawnTroop({id:'skelqueen',name:'Skeleton Queen',hp:queenHp,dmg:150,spd:1.2,rng:1,as:1.3,type:'troop',icon:'👸💀',cnt:1},t.x,t.y+40,t.side,t.lane);if(queen){queen.hitCount=0;queen.isSkeletonQueen=true;summonedUnits.push(queen);}setTimeout(()=>{summonedUnits.forEach(s=>{if(s&&s.hp>0){s.hp=0;if(s.el)s.el.remove();}});},10000);}break;
 case 'multistrike':showDmg(t.x,t.y-12,'⚔️MULTI!','#e67e22');t.as*=0.3;setTimeout(()=>t.as/=0.3,2000);break;
 case 'earthquake':showDmg(t.x,t.y-12,'🗿QUAKE!','#8b4513');B.troops.forEach(e=>{if(e.side===enemy&&e.hp>0){const d=Math.sqrt((e.x-t.x)**2+(e.y-t.y)**2);if(d<80){e.hp-=400;showDmg(e.x,e.y,'-400','#8b4513');}}});break;
 case 'blizzard':showDmg(t.x,t.y-12,'❄️FREEZE!','#00ffff');B.troops.forEach(e=>{if(e.side===enemy&&e.hp>0)e.stun=3;});break;
@@ -4272,7 +4333,7 @@ if(!B||!B.on||!B.activeChampion)return;
 const t=B.activeChampion;if(t.abilityUsed)return;
 t.abilityUsed=true;t.hitCount=10;triggerAbility(t);updateChampionAbilityButton();}
 function startLoop(){let last=performance.now();function loop(now){if(!B||!B.on)return;const dt=(now-last)/1000;last=now;B.time+=dt;const rem=Math.max(0,(B.duration||180)-B.time);document.getElementById('timer').textContent=fmt(rem);if(rem<=0){if(B.isMultiplayer){sendBattleEnd(B.crowns.me>B.crowns.ai);return;}else{endBattle(B.crowns.me>B.crowns.ai);return;}}const rate=B.time>=120?1.6:0.8;B.elixir=Math.min(10,B.elixir+dt*rate);if(!B.isMultiplayer)B.botElixir=Math.min(10,B.botElixir+dt*rate*0.85);document.getElementById('elixirFill').style.width=(B.elixir*10)+'%';document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/10';document.getElementById('doubleElixir').classList.toggle('on',B.time>=120);updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);towerAttacks(dt);if(!B.isMultiplayer)aiTurn();if(B.crowns.me>=3){if(B.isMultiplayer){sendBattleEnd(true);return;}else{endBattle(true);return;}}if(B.crowns.ai>=3){if(B.isMultiplayer){sendBattleEnd(false);return;}else{endBattle(false);return;}}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
-function updateTroops(dt){const a=document.getElementById('arena');B.troops.forEach(t=>{if(t.hp<=0)return;if(t.stun>0){t.stun-=dt;return;}const target=findTarget(t);if(!target)return;const dx=target.x-t.x,dy=target.y-t.y,dist=Math.sqrt(dx*dx+dy*dy);if(t.card.charge&&!t.charge){t.chargeBuildup+=dt;if(t.chargeBuildup>=2)t.charge=1;}if(dist<=t.rng){t.cd-=dt;if(t.cd<=0){let dmg=t.dmg;if(t.charge){dmg*=2;t.charge=0;showDmg(t.x,t.y-12,'⚡CHARGE!','#f1c40f');}if(target.type==='tower'){t.lockedTower=target.key;B.towers[target.key].hp-=dmg;showDmg(target.x,target.y,'-'+dmg);updateTower(target.key);if(t.card.poison&&!B.towers[target.key].poisoned){B.towers[target.key].poisoned=true;B.troopPoisons.push({tower:target.key,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}else{if(t.card.spl){const sr=t.card.spl*16;B.troops.forEach(e=>{if(e.side!==t.side&&e.hp>0){const ed=Math.sqrt((e.x-target.x)**2+(e.y-target.y)**2);if(ed<sr){e.hp-=dmg;showDmg(e.x,e.y,'-'+dmg);if(t.card.poison&&!e.poisoned){e.poisoned=true;B.troopPoisons.push({target:e,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}});}else{target.hp-=dmg;showDmg(target.x,target.y,'-'+dmg);if(t.card.poison&&!target.poisoned){target.poisoned=true;B.troopPoisons.push({target,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}t.hitCount++;if(t.card.ability&&t.hitCount>=10&&!t.abilityUsed){t.abilityUsed=true;triggerAbility(t);}const counter=t.el.querySelector('.hit-counter');if(counter)counter.textContent=t.hitCount;t.cd=t.as;}}else{let spd=t.charge?t.spd*2:t.spd;const pushDist=30;B.troops.forEach(p=>{if(p!==t&&p.side===t.side&&p.hp>0&&p.spd>t.spd){const px=p.x-t.x,py=p.y-t.y,pd=Math.sqrt(px*px+py*py);const behind=(t.side==='player'?py>0:py<0);const sameArea=Math.abs(px)<25;if(pd<pushDist&&behind&&sameArea){spd=Math.max(spd,p.spd*0.85);}}});t.x+=(dx/dist)*spd*38*dt;t.y+=(dy/dist)*spd*38*dt;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';}const bar=t.el.querySelector('.hp-fill');if(bar)bar.style.width=Math.max(0,(t.hp/t.maxHp)*100)+'%';});B.troops=B.troops.filter(t=>{if(t.hp<=0){const fx=document.createElement('div');fx.className='death-effect';fx.textContent=t.card.icon;fx.style.left=t.x+'px';fx.style.top=t.y+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),500);t.el.remove();return false;}return true;});}
+function updateTroops(dt){const a=document.getElementById('arena');B.troops.forEach(t=>{if(t.hp<=0)return;if(t.stun>0){t.stun-=dt;return;}const target=findTarget(t);if(!target)return;const dx=target.x-t.x,dy=target.y-t.y,dist=Math.sqrt(dx*dx+dy*dy);if(t.card.charge&&!t.charge){t.chargeBuildup+=dt;if(t.chargeBuildup>=2)t.charge=1;}if(dist<=t.rng){t.cd-=dt;if(t.cd<=0){let dmg=t.dmg;if(t.charge){dmg*=2;t.charge=0;showDmg(t.x,t.y-12,'⚡CHARGE!','#f1c40f');}if(target.type==='tower'){t.lockedTower=target.key;B.towers[target.key].hp-=dmg;showDmg(target.x,target.y,'-'+dmg);updateTower(target.key);if(t.card.poison&&!B.towers[target.key].poisoned){B.towers[target.key].poisoned=true;B.troopPoisons.push({tower:target.key,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}else{if(t.card.spl){const sr=t.card.spl*16;B.troops.forEach(e=>{if(e.side!==t.side&&e.hp>0){const ed=Math.sqrt((e.x-target.x)**2+(e.y-target.y)**2);if(ed<sr){e.hp-=dmg;showDmg(e.x,e.y,'-'+dmg);if(t.card.poison&&!e.poisoned){e.poisoned=true;B.troopPoisons.push({target:e,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}});}else{target.hp-=dmg;showDmg(target.x,target.y,'-'+dmg);if(t.card.poison&&!target.poisoned){target.poisoned=true;B.troopPoisons.push({target,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}t.hitCount++;if(t.isSkeletonQueen&&t.hitCount%3===0){const skelC=getCard('skel');if(skelC){for(let qi=0;qi<3;qi++){const qang=(qi/3)*Math.PI*2;const qsx=t.x+Math.cos(qang)*25;const qsy=t.y+Math.sin(qang)*25;spawnTroop({...skelC,cnt:1},qsx,qsy,t.side,t.lane);}showDmg(t.x,t.y-12,'👸💀x3!','#9b59b6');}}if(t.card.ability&&t.hitCount>=10&&!t.abilityUsed){t.abilityUsed=true;triggerAbility(t);}const counter=t.el.querySelector('.hit-counter');if(counter)counter.textContent=t.hitCount;t.cd=t.as;}}else{let spd=t.charge?t.spd*2:t.spd;const pushDist=30;B.troops.forEach(p=>{if(p!==t&&p.side===t.side&&p.hp>0&&p.spd>t.spd){const px=p.x-t.x,py=p.y-t.y,pd=Math.sqrt(px*px+py*py);const behind=(t.side==='player'?py>0:py<0);const sameArea=Math.abs(px)<25;if(pd<pushDist&&behind&&sameArea){spd=Math.max(spd,p.spd*0.85);}}});t.x+=(dx/dist)*spd*38*dt;t.y+=(dy/dist)*spd*38*dt;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';}const bar=t.el.querySelector('.hp-fill');if(bar)bar.style.width=Math.max(0,(t.hp/t.maxHp)*100)+'%';});B.troops=B.troops.filter(t=>{if(t.hp<=0){const fx=document.createElement('div');fx.className='death-effect';fx.textContent=t.card.icon;fx.style.left=t.x+'px';fx.style.top=t.y+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),500);t.el.remove();return false;}return true;});}
 function findTarget(t){const enemy=t.side==='player'?'ai':'player',tKeys=enemy==='ai'?['aL','aR','aK']:['pL','pR','pK'];let best=null,bestD=120;
 // If troop has locked onto a tower (already hit it once), keep targeting it
 if(t.lockedTower&&!B.towers[t.lockedTower].dead)return{type:'tower',key:t.lockedTower,x:B.towers[t.lockedTower].x,y:B.towers[t.lockedTower].y};

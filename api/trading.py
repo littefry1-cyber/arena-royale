@@ -237,3 +237,72 @@ async def cancel_trade(request: web.Request) -> web.Response:
     await db.save_trade(trade)
 
     return web.json_response({'success': True})
+
+
+@routes.post('/api/send-resources')
+async def send_resources(request: web.Request) -> web.Response:
+    """Send gold, gems, or other resources to another player"""
+    player_id = get_player_id_from_request(request)
+    if not player_id:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+
+    sender = await db.get_player(player_id)
+    if not sender:
+        return web.json_response({'error': 'Player not found'}, status=404)
+
+    try:
+        data = await request.json()
+    except:
+        return web.json_response({'error': 'Invalid JSON'}, status=400)
+
+    recipient_name = data.get('recipient')
+    resource_type = data.get('resource')  # 'gold', 'gems', 'crystals', 'star_points'
+    amount = int(data.get('amount', 0))
+
+    if not recipient_name:
+        return web.json_response({'error': 'Recipient required'}, status=400)
+
+    if not resource_type:
+        return web.json_response({'error': 'Resource type required'}, status=400)
+
+    valid_resources = ['gold', 'gems', 'crystals', 'star_points']
+    if resource_type not in valid_resources:
+        return web.json_response({'error': f'Invalid resource. Valid: {valid_resources}'}, status=400)
+
+    if amount <= 0:
+        return web.json_response({'error': 'Amount must be positive'}, status=400)
+
+    # Find recipient by username
+    recipient = await db.find_player_by_username(recipient_name)
+    if not recipient:
+        return web.json_response({'error': 'Recipient not found'}, status=404)
+
+    if recipient['id'] == player_id:
+        return web.json_response({'error': 'Cannot send to yourself'}, status=400)
+
+    # Check sender has enough resources
+    sender_resources = sender.get('resources', {})
+    sender_amount = sender_resources.get(resource_type, 0)
+
+    if sender_amount < amount:
+        return web.json_response({'error': f'Not enough {resource_type}. You have {sender_amount}'}, status=400)
+
+    # Transfer resources
+    sender['resources'][resource_type] = sender_amount - amount
+
+    if 'resources' not in recipient:
+        recipient['resources'] = {}
+    recipient['resources'][resource_type] = recipient['resources'].get(resource_type, 0) + amount
+
+    # Save both players
+    await db.save_player(sender)
+    await db.save_player(recipient)
+
+    sender_name = sender.get('profile', {}).get('name', sender.get('username', 'Unknown'))
+    recipient_display = recipient.get('profile', {}).get('name', recipient.get('username', 'Unknown'))
+
+    return web.json_response({
+        'success': True,
+        'message': f'Sent {amount} {resource_type} to {recipient_display}',
+        'your_new_balance': sender['resources'][resource_type],
+    })

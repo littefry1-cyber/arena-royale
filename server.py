@@ -384,6 +384,16 @@ def create_app() -> web.Application:
     app.router.add_get('/health', health_check)
     app.router.add_get('/api/status', health_check)
 
+    # Serve the game HTML
+    async def serve_game(request):
+        import aiofiles
+        game_path = os.path.join(os.path.dirname(__file__), 'index.html')
+        async with aiofiles.open(game_path, 'r', encoding='utf-8') as f:
+            content = await f.read()
+        return web.Response(text=content, content_type='text/html')
+
+    app.router.add_get('/', serve_game)
+
     return app
 
 
