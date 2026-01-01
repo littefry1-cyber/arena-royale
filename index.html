@@ -29,6 +29,7 @@
     @keyframes workshopGlow{0%,100%{box-shadow:0 4px 0 #cc4444,0 0 10px rgba(255,107,107,0.4)}50%{box-shadow:0 4px 0 #cc4444,0 0 20px rgba(255,107,107,0.8)}}
     @keyframes starGlow{0%,100%{box-shadow:0 4px 0 #cc8800,0 0 10px rgba(255,215,0,0.4)}50%{box-shadow:0 4px 0 #cc8800,0 0 25px rgba(255,215,0,0.9)}}
     @keyframes bossGlow{0%,100%{box-shadow:0 4px 0 #8b0000,0 0 10px rgba(255,71,87,0.4)}50%{box-shadow:0 4px 0 #8b0000,0 0 25px rgba(255,71,87,0.9)}}
+    @keyframes pvpGlow{0%,100%{box-shadow:0 4px 0 #922b21,0 0 10px rgba(231,76,60,0.4)}50%{box-shadow:0 4px 0 #922b21,0 0 25px rgba(231,76,60,0.9)}}
     @keyframes cashGlow{0%,100%{box-shadow:0 4px 0 #1e8449,0 0 10px rgba(46,204,113,0.4)}50%{box-shadow:0 4px 0 #1e8449,0 0 25px rgba(46,204,113,0.9)}}
     .cash-filter{padding:5px 10px;background:#1a1a2e;border:1px solid #333;border-radius:15px;color:#888;font-size:9px;font-weight:800;cursor:pointer}
     .cash-filter.active{background:linear-gradient(145deg,#2ecc71,#27ae60);color:#fff;border-color:#2ecc71}
@@ -1064,6 +1065,10 @@
           <span style="font-size:24px">🏰</span>
           <span style="font-size:11px">TOWERS</span>
         </button>
+        <button class="more-nav-btn" onclick="showPvpChallenge()" style="background:linear-gradient(145deg,#e74c3c,#c0392b);border:none;border-radius:10px;padding:15px 10px;color:#fff;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 0 #922b21;animation:pvpGlow 2s infinite">
+          <span style="font-size:24px">⚔️</span>
+          <span style="font-size:11px">PVP CHALLENGE</span>
+        </button>
         <button class="more-nav-btn" onclick="showPatchNotes()" style="background:linear-gradient(145deg,#00d4aa,#00a888);border:none;border-radius:10px;padding:15px 10px;color:#fff;font-weight:800;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:5px;box-shadow:0 4px 0 #007766">
           <span style="font-size:24px">📋</span>
           <span style="font-size:11px">PATCH NOTES</span>
@@ -1756,8 +1761,10 @@
 </div>
   <script>
 // ========== MULTIPLAYER NETWORK LAYER ==========
-const SERVER_URL = 'http://localhost:5004';
-const WS_URL = 'ws://localhost:5004/ws';
+// Use current hostname for LAN access (falls back to localhost for local dev)
+const SERVER_HOST = window.location.hostname || 'localhost';
+const SERVER_URL = `http://${SERVER_HOST}:5004`;
+const WS_URL = `ws://${SERVER_HOST}:5004/ws`;
 
 const NET = {
   token: null,
@@ -2053,6 +2060,45 @@ const NET = {
 };
 
 // Setup WebSocket message handlers
+NET.on('online_count', (data) => {
+  const countEl = document.getElementById('onlineCount');
+  if (countEl) {
+    countEl.textContent = `${data.count} Online`;
+  }
+});
+
+NET.on('online_players', (data) => {
+  showOnlinePlayersModal(data.players);
+});
+
+NET.on('challenge_received', (data) => {
+  showChallengeReceivedModal(data);
+});
+
+NET.on('challenge_sent', (data) => {
+  showNotify('Challenge sent! Waiting for response...', 'info', '⚔️');
+});
+
+NET.on('challenge_accepted', (data) => {
+  console.log('Challenge accepted event received:', data);
+  closePvpModals();
+  showNotify('Challenge accepted! Starting battle...', 'success', '⚔️');
+  startMultiplayerBattle(data);
+});
+
+NET.on('challenge_declined', (data) => {
+  showNotify('Challenge was declined', 'info', '❌');
+});
+
+NET.on('challenge_cancelled', (data) => {
+  closePvpModals();
+  showNotify('Challenge was cancelled', 'info', '❌');
+});
+
+NET.on('challenge_failed', (data) => {
+  showNotify(data.error || 'Challenge failed', 'error', '❌');
+});
+
 NET.on('queue_status', (data) => {
   const status = document.getElementById('matchmakingStatus');
   if (status) {
@@ -2086,10 +2132,12 @@ NET.on('battle_state', (data) => {
 });
 
 NET.on('battle_result', async (data) => {
-  if (typeof B !== 'undefined') {
+  console.log('Battle result received:', data);
+  if (typeof B !== 'undefined' && B.isMultiplayer) {
     B.on = false;
+    if (B.loop) cancelAnimationFrame(B.loop);
     await applyBattleResult(data.your_result);
-    showBattleResultScreen(data);
+    showMultiplayerBattleResult(data);
   }
 });
 
@@ -2211,24 +2259,292 @@ function cancelMatchmaking() {
 // Multiplayer battle functions
 function startMultiplayerBattle(matchData) {
   // Store opponent info
-  window.multiplayerOpponent = matchData.opponent;
+  window.multiplayerOpponent = matchData.opponent || {
+    name: matchData.opponent_name,
+    trophies: matchData.opponent_trophies
+  };
   window.multiplayerBattleId = matchData.battle_id;
-  window.multiplayerRole = matchData.you_are;
+  window.multiplayerRole = matchData.you_are || 'player1';
+
+  console.log('Starting multiplayer battle:', matchData);
 
   // Start battle with opponent data
-  if (typeof startBattleWithOpponent === 'function') {
-    startBattleWithOpponent(matchData);
-  }
+  startBattleWithOpponent(matchData);
+}
+
+function startBattleWithOpponent(matchData) {
+  console.log('startBattleWithOpponent called with:', matchData);
+
+  // Fill deck if needed
+  if (P.deck.length < 8) randomDeck();
+
+  const opponentName = matchData.opponent_name || matchData.opponent?.name || 'Opponent';
+  const opponentTrophies = matchData.opponent_trophies || matchData.opponent?.trophies || 0;
+  console.log('Opponent:', opponentName, 'Trophies:', opponentTrophies);
+
+  // Initialize battle state for multiplayer
+  B = {
+    on: true,
+    isMultiplayer: true,
+    battleId: matchData.battle_id,
+    myRole: matchData.you_are || 'player1',
+    elixir: 5,
+    botElixir: 5,
+    hand: [],
+    queue: [...P.deck].sort(() => 0.5 - Math.random()),
+    next: null,
+    sel: -1,
+    troops: [],
+    buildings: [],
+    elixirPumps: [],
+    towers: {
+      pL: { hp: getPrincessHP(), max: getPrincessHP(), dead: 0 },
+      pR: { hp: getPrincessHP(), max: getPrincessHP(), dead: 0 },
+      pK: { hp: getKingTowerHP(), max: getKingTowerHP(), dead: 0 },
+      aL: { hp: getPrincessHP(), max: getPrincessHP(), dead: 0 },
+      aR: { hp: getPrincessHP(), max: getPrincessHP(), dead: 0 },
+      aK: { hp: getKingTowerHP(), max: getKingTowerHP(), dead: 0 }
+    },
+    tCD: { pL: 0, pR: 0, pK: 0, aL: 0, aR: 0, aK: 0 },
+    kingOn: { p: 0, a: 0 },
+    crowns: { me: 0, ai: 0 },
+    time: 0,
+    arena: getArena(P.tr),
+    botLvl: 1,
+    botMult: 1,
+    botCards: [],
+    botHand: [],
+    botQueue: [],
+    loop: null,
+    gameMode: 'pvp',
+    spellEffects: [],
+    troopPoisons: [],
+    cardCycle: [],
+    opponentName: opponentName,
+    opponentTrophies: opponentTrophies
+  };
+
+  // Fill hand
+  for (let i = 0; i < 4; i++) B.hand.push(B.queue.shift());
+  B.next = B.queue.shift();
+
+  // Show battle UI
+  document.getElementById('battle').classList.add('on');
+  try {
+    if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
+  } catch (e) {}
+
+  renderArena();
+
+  // Tell server we're ready
+  NET.send('battle_ready', { battle_id: matchData.battle_id });
+
+  // Start the game loop
+  startLoop();
 }
 
 function handleOpponentAction(data) {
-  // Handle opponent's action in battle
-  console.log('Opponent action:', data);
+  if (!B || !B.on || !B.isMultiplayer) return;
+
+  const action = data.action;
+  if (!action) return;
+
+  console.log('Opponent action:', action);
+
+  // Handle troop spawn
+  if (action.type === 'spawn_troop') {
+    const card = getCard(action.card_id);
+    if (card) {
+      const lvlCard = { ...card, hp: card.hp, dmg: card.dmg, lvl: action.level || 1 };
+      // Flip coordinates for opponent (mirror Y axis)
+      const a = document.getElementById('arena');
+      const mirrorY = a.offsetHeight - action.y;
+      spawnTroopForOpponent(lvlCard, action.x, mirrorY, action.lane);
+    }
+  }
+
+  // Handle spell cast
+  if (action.type === 'cast_spell') {
+    const card = getCard(action.card_id);
+    if (card) {
+      const a = document.getElementById('arena');
+      const mirrorY = a.offsetHeight - action.y;
+      castSpellForOpponent(card, action.x, mirrorY);
+    }
+  }
+
+  // Handle building spawn
+  if (action.type === 'spawn_building') {
+    const card = getCard(action.card_id);
+    if (card) {
+      const a = document.getElementById('arena');
+      const mirrorY = a.offsetHeight - action.y;
+      spawnBuildingForOpponent(card, action.x, mirrorY, action.lane);
+    }
+  }
+}
+
+function spawnTroopForOpponent(card, x, y, lane) {
+  const a = document.getElementById('arena');
+  const cnt = card.cnt || 1;
+
+  const fx = document.createElement('div');
+  fx.className = 'spawn-effect ai';
+  fx.style.left = (x - 20) + 'px';
+  fx.style.top = (y - 20) + 'px';
+  a.appendChild(fx);
+  setTimeout(() => fx.remove(), 400);
+
+  for (let i = 0; i < cnt; i++) {
+    const ox = cnt > 1 ? (i - (cnt - 1) / 2) * 12 : 0;
+    const tx = Math.max(10, Math.min(a.offsetWidth - 10, x + ox));
+    const ty = y + (Math.random() - 0.5) * 6;
+
+    const el = document.createElement('div');
+    el.className = 'troop ai' + (card.fly ? ' fly' : '');
+    el.style.left = tx + 'px';
+    el.style.top = ty + 'px';
+    el.innerHTML = `<div class="sprite">${card.icon}</div><div class="hp-bar"><div class="hp-fill" style="width:100%"></div></div>`;
+    a.appendChild(el);
+
+    B.troops.push({
+      el, x: tx, y: ty, lane,
+      hp: card.hp, maxHp: card.hp, dmg: card.dmg,
+      spd: card.spd, rng: (card.rng || 1) * 16, as: card.as || 1,
+      side: 'ai', card, cd: 0, charge: 0, chargeBuildup: 0, stun: 0, hitCount: 0, abilityUsed: false
+    });
+  }
+}
+
+function castSpellForOpponent(card, x, y) {
+  // Handle opponent spells (simplified - reuse existing spell logic)
+  const a = document.getElementById('arena');
+  const r = card.radius * 16;
+
+  // Visual effect
+  const fx = document.createElement('div');
+  fx.className = 'spell-effect';
+  fx.style.left = (x - r) + 'px';
+  fx.style.top = (y - r) + 'px';
+  fx.style.width = (r * 2) + 'px';
+  fx.style.height = (r * 2) + 'px';
+  a.appendChild(fx);
+  setTimeout(() => fx.remove(), 500);
+
+  // Apply spell damage to player troops
+  if (card.dmg) {
+    B.troops.filter(t => t.side === 'player').forEach(t => {
+      const dx = t.x - x, dy = t.y - y;
+      if (Math.sqrt(dx * dx + dy * dy) <= r) {
+        t.hp -= card.dmg;
+      }
+    });
+  }
+}
+
+function spawnBuildingForOpponent(card, x, y, lane) {
+  const a = document.getElementById('arena');
+
+  const fx = document.createElement('div');
+  fx.className = 'spawn-effect ai';
+  fx.style.left = (x - 20) + 'px';
+  fx.style.top = (y - 20) + 'px';
+  a.appendChild(fx);
+  setTimeout(() => fx.remove(), 400);
+
+  const el = document.createElement('div');
+  el.className = 'building ai';
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  el.innerHTML = `<div class="sprite" style="font-size:28px">${card.icon}</div><div class="hp-bar"><div class="hp-fill" style="width:100%"></div></div>`;
+  a.appendChild(el);
+
+  if (!B.buildings) B.buildings = [];
+  B.buildings.push({
+    el, x, y, lane,
+    hp: card.hp, maxHp: card.hp, dmg: card.dmg || 0,
+    rng: card.rng || 5, as: card.as || 1, air: card.air || 0,
+    side: 'ai', card, cd: 0, icon: card.icon,
+    lifetime: card.lifetime || 0, remaining: card.lifetime || 0
+  });
+}
+
+// Send troop spawn to server for multiplayer sync
+function sendTroopSpawn(card, x, y, lane) {
+  if (B && B.isMultiplayer) {
+    NET.send('battle_action', {
+      battle_id: B.battleId,
+      action: {
+        type: 'spawn_troop',
+        card_id: card.id,
+        level: card.lvl || 1,
+        x: x,
+        y: y,
+        lane: lane
+      }
+    });
+  }
+}
+
+// Send spell cast to server for multiplayer sync
+function sendSpellCast(card, x, y) {
+  if (B && B.isMultiplayer) {
+    NET.send('battle_action', {
+      battle_id: B.battleId,
+      action: {
+        type: 'cast_spell',
+        card_id: card.id,
+        x: x,
+        y: y
+      }
+    });
+  }
+}
+
+// Send building spawn to server for multiplayer sync
+function sendBuildingSpawn(card, x, y, lane) {
+  if (B && B.isMultiplayer) {
+    NET.send('battle_action', {
+      battle_id: B.battleId,
+      action: {
+        type: 'spawn_building',
+        card_id: card.id,
+        x: x,
+        y: y,
+        lane: lane
+      }
+    });
+  }
 }
 
 function syncBattleState(data) {
-  // Sync tower HP and crowns from server
-  console.log('Battle state sync:', data);
+  if (!B || !B.on) return;
+
+  // Sync tower HP from server
+  const myRole = B.myRole || 'player1';
+  const myHP = myRole === 'player1' ? data.player1_hp : data.player2_hp;
+  const enemyHP = myRole === 'player1' ? data.player2_hp : data.player1_hp;
+
+  if (myHP) {
+    B.towers.pK.hp = myHP.king;
+    B.towers.pL.hp = myHP.left;
+    B.towers.pR.hp = myHP.right;
+  }
+  if (enemyHP) {
+    B.towers.aK.hp = enemyHP.king;
+    B.towers.aL.hp = enemyHP.left;
+    B.towers.aR.hp = enemyHP.right;
+  }
+
+  // Update crown display
+  const myCrowns = myRole === 'player1' ? data.player1_crowns : data.player2_crowns;
+  const enemyCrowns = myRole === 'player1' ? data.player2_crowns : data.player1_crowns;
+
+  B.crowns.me = myCrowns || 0;
+  B.crowns.ai = enemyCrowns || 0;
+
+  document.getElementById('myCrowns').textContent = B.crowns.me;
+  document.getElementById('aiCrowns').textContent = B.crowns.ai;
 }
 
 async function applyBattleResult(result) {
@@ -2245,13 +2561,48 @@ async function applyBattleResult(result) {
 }
 
 function showBattleResultScreen(data) {
-  // Show battle result (reuse existing battle end UI)
+  // Show battle result notification
   const result = data.your_result;
   if (result.won) {
     showNotify(`Victory! +${result.trophy_change} trophies, +${result.gold_earned} gold`, 'success');
   } else {
     showNotify(`Defeat! ${result.trophy_change} trophies`, 'error');
   }
+}
+
+function showMultiplayerBattleResult(data) {
+  const result = data.your_result;
+  const won = result.won;
+  const crowns = result.crowns || 0;
+
+  // Remove battle UI
+  document.getElementById('battle').classList.remove('on');
+  try {
+    if (document.exitFullscreen) document.exitFullscreen().catch(() => {});
+  } catch (e) {}
+
+  // Show result overlay
+  const ov = document.createElement('div');
+  ov.className = 'result-overlay';
+  ov.innerHTML = `
+    <div class="result-title ${won ? 'win' : 'lose'}">${won ? '🏆 VICTORY!' : '💀 DEFEAT!'}</div>
+    <div style="color:#e74c3c;font-size:14px;font-weight:900;margin-bottom:10px">⚔️ PVP BATTLE</div>
+    <div style="color:#fff;font-size:12px;margin-bottom:10px">vs ${window.multiplayerOpponent?.name || 'Opponent'}</div>
+    <div class="result-crowns">
+      <span class="crown ${crowns >= 1 ? 'earned' : ''}">👑</span>
+      <span class="crown ${crowns >= 2 ? 'earned' : ''}">👑</span>
+      <span class="crown ${crowns >= 3 ? 'earned' : ''}">👑</span>
+    </div>
+    <div style="margin:15px 0;font-size:12px">
+      <div style="color:${result.trophy_change >= 0 ? '#2ecc71' : '#e74c3c'}">🏆 ${result.trophy_change >= 0 ? '+' : ''}${result.trophy_change} Trophies</div>
+      <div style="color:#f1c40f">💰 +${result.gold_earned} Gold</div>
+    </div>
+    <div class="result-btns">
+      <button class="result-btn primary" onclick="closeResult()">🏠 Menu</button>
+    </div>
+  `;
+  document.body.appendChild(ov);
+  playSound(won ? 'victory' : 'defeat');
 }
 
 // Initialize network on page load
@@ -2655,6 +3006,83 @@ function showPatchNotes(){const modal=document.createElement('div');modal.classN
 function closePatchNotes(){const modal=document.getElementById('patchNotesModal');if(modal)modal.remove();}
 function checkFirstTimeOpen(){const viewed=localStorage.getItem('patchNotesViewed');if(viewed!=='2.1.0')setTimeout(()=>showPatchNotes(),500);}
 
+// PVP Challenge Functions
+function showPvpChallenge(){
+  if(!NET.isOnline){showNotify('You must be online to challenge players!','error','❌');return;}
+  NET.send('get_online_players',{});
+}
+
+function showOnlinePlayersModal(players){
+  const modal=document.createElement('div');
+  modal.className='confirm-modal';
+  modal.id='pvpPlayersModal';
+  modal.style.cssText='padding:40px 20px;box-sizing:border-box;overflow-y:auto';
+  modal.onclick=(e)=>{if(e.target===modal)closePvpModals();};
+
+  let playersHtml='';
+  if(players.length===0){
+    playersHtml='<div style="text-align:center;color:#6b7c8a;padding:20px">No other players online right now</div>';
+  }else{
+    playersHtml=players.map(p=>`
+      <div style="background:linear-gradient(145deg,#1b2838,#152232);border:2px solid #34495e;border-radius:12px;padding:12px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+        <div>
+          <div style="font-weight:800;color:#fff">${p.name}</div>
+          <div style="font-size:11px;color:#6b7c8a">🏆 ${p.trophies} trophies</div>
+        </div>
+        <button onclick="sendChallenge('${p.id}')" style="padding:8px 16px;background:linear-gradient(180deg,#e74c3c,#c0392b);border:none;border-radius:8px;color:#fff;font-weight:800;font-size:12px;cursor:pointer">⚔️ Challenge</button>
+      </div>
+    `).join('');
+  }
+
+  modal.innerHTML=`
+    <div style="background:linear-gradient(145deg,#0d1b2a,#1b2838);border:3px solid #e74c3c;border-radius:16px;padding:20px;max-width:360px;width:100%;max-height:calc(100vh - 80px);overflow-y:auto;margin:0 auto">
+      <div style="text-align:center;margin-bottom:15px">
+        <div style="font-family:'Lilita One',cursive;font-size:24px;background:linear-gradient(90deg,#e74c3c,#c0392b);-webkit-background-clip:text;-webkit-text-fill-color:transparent">⚔️ PVP CHALLENGE</div>
+        <div style="font-size:10px;color:#6b7c8a">Challenge a player to battle!</div>
+      </div>
+      <div style="margin-bottom:15px">${playersHtml}</div>
+      <button onclick="closePvpModals()" style="width:100%;padding:12px;background:linear-gradient(180deg,#34495e,#2c3e50);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:14px;cursor:pointer">Close</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function showChallengeReceivedModal(data){
+  closePvpModals();
+  const modal=document.createElement('div');
+  modal.className='confirm-modal';
+  modal.id='pvpChallengeModal';
+  modal.style.cssText='padding:40px 20px;box-sizing:border-box';
+
+  modal.innerHTML=`
+    <div style="background:linear-gradient(145deg,#0d1b2a,#1b2838);border:3px solid #f39c12;border-radius:16px;padding:20px;max-width:320px;width:100%;margin:0 auto;text-align:center">
+      <div style="font-size:48px;margin-bottom:10px">⚔️</div>
+      <div style="font-family:'Lilita One',cursive;font-size:20px;color:#f39c12;margin-bottom:5px">CHALLENGE RECEIVED!</div>
+      <div style="font-weight:800;font-size:18px;color:#fff;margin-bottom:5px">${data.challenger_name}</div>
+      <div style="font-size:12px;color:#6b7c8a;margin-bottom:20px">🏆 ${data.challenger_trophies} trophies</div>
+      <div style="display:flex;gap:10px">
+        <button onclick="respondToChallenge('${data.challenger_id}',false)" style="flex:1;padding:12px;background:linear-gradient(180deg,#e74c3c,#c0392b);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:14px;cursor:pointer">❌ Decline</button>
+        <button onclick="respondToChallenge('${data.challenger_id}',true)" style="flex:1;padding:12px;background:linear-gradient(180deg,#27ae60,#1e8449);border:none;border-radius:10px;color:#fff;font-weight:800;font-size:14px;cursor:pointer">✓ Accept</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  playSound('notify');
+}
+
+function sendChallenge(targetId){
+  closePvpModals();
+  NET.send('challenge_player',{target_id:targetId});
+}
+
+function respondToChallenge(challengerId,accepted){
+  closePvpModals();
+  NET.send('challenge_response',{challenger_id:challengerId,accepted:accepted});
+}
+
+function closePvpModals(){
+  const modals=['pvpPlayersModal','pvpChallengeModal'];
+  modals.forEach(id=>{const m=document.getElementById(id);if(m)m.remove();});
+}
+
 function goTab(t){document.querySelectorAll('.tab').forEach(el=>el.classList.remove('on'));document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('on'));document.getElementById('tab'+t).classList.add('on');const idx=['Play','Cards','Chests','Shop','Road','Leaderboard','Stats','Arena'].indexOf(t);if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('on');if(t==='Play')updatePlay();if(t==='Cards')updateCards(),updateKingTowerUI();if(t==='Chests')updateChests();if(t==='Shop')updateShop();if(t==='Road')updateRoad();if(t==='Leaderboard')updateLeaderboard();if(t==='Stats')updateStats();if(t==='Arena')updateArena();if(t==='Titles')updateTitlesTab();if(t==='MedalsLB')updateMedalsLB();}
 
 function updatePlay(){const a=getArena(P.tr);document.getElementById('dispTr').textContent=P.tr.toLocaleString();document.getElementById('dispArena').textContent=a.icon+' '+a.name;document.getElementById('dispW').textContent=P.wins;document.getElementById('dispL').textContent=P.losses;document.getElementById('dispC').textContent=P.crowns;const btn=document.getElementById('battleBtn'),badge=document.getElementById('rankedBadge');if(isRanked()){btn.className='battle-btn ranked';btn.innerHTML='🔥 RANKED BATTLE!';badge.style.display='inline-block';}else{btn.className='battle-btn';btn.innerHTML='⚔️ BATTLE!';badge.style.display='none';}}
@@ -2947,7 +3375,7 @@ function sendEmote(e){document.getElementById('emotePanel').classList.remove('on
 function cycleCard(){const playedCardId=B.hand[B.sel];B.hand[B.sel]=B.next;B.next=B.queue.shift();if(!B.queue.length)B.queue=[...P.deck].sort(()=>0.5-Math.random());B.sel=-1;document.getElementById('spawnZone').classList.remove('ready');const pl=document.getElementById('pocketLeft'),pr=document.getElementById('pocketRight');if(pl)pl.classList.remove('ready');if(pr)pr.classList.remove('ready');document.getElementById('nextCard').querySelector('.icon').textContent=getCard(B.next)?.icon||'?';if(playedCardId){if(!B.cardCycle)B.cardCycle=[];B.cardCycle.push(playedCardId);if(B.cardCycle.length>4)B.cardCycle.shift();updateCardCycle();}updateHand();}
 function updateCardCycle(){const el=document.getElementById('cardCycle');if(!el||!B||!B.cardCycle)return;el.innerHTML='<div class="cycle-lbl">CYCLE</div>'+B.cardCycle.map(id=>{const c=getCard(id);return c?`<div class="cycle-card">${c.icon}</div>`:'';}).join('');}
 function updateHand(){const el=document.getElementById('hand');if(!el||!B)return;el.innerHTML='';B.hand.forEach((id,i)=>{const c=getLvlCard(id);if(!c)return;const d=document.createElement('div');d.className=`hand-card ${c.rarity}`+(B.sel===i?' selected':'')+(c.cost>B.elixir?' disabled':'');d.innerHTML=`<div class="cost">${c.cost}</div><div class="icon">${c.icon}</div><div class="name">${c.name}</div>`;d.addEventListener('pointerdown',function(e){e.preventDefault();e.stopPropagation();if(c.cost>B.elixir)return;B.sel=B.sel===i?-1:i;updateHand();document.getElementById('spawnZone').classList.toggle('ready',B.sel!==-1);const pl=document.getElementById('pocketLeft'),pr=document.getElementById('pocketRight');if(pl&&pl.classList.contains('unlocked'))pl.classList.toggle('ready',B.sel!==-1);if(pr&&pr.classList.contains('unlocked'))pr.classList.toggle('ready',B.sel!==-1);});el.appendChild(d);});}
-function spawnTroop(card,x,y,side,lane){const a=document.getElementById('arena'),cnt=card.cnt||1;const fx=document.createElement('div');fx.className=`spawn-effect ${side}`;fx.style.left=(x-20)+'px';fx.style.top=(y-20)+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),400);for(let i=0;i<cnt;i++){const ox=cnt>1?(i-(cnt-1)/2)*12:0,tx=Math.max(10,Math.min(a.offsetWidth-10,x+ox)),ty=y+(Math.random()-0.5)*6;const el=document.createElement('div');el.className=`troop ${side}`+(card.fly?' fly':'');el.style.left=tx+'px';el.style.top=ty+'px';el.innerHTML=`<div class="sprite">${card.icon}</div><div class="hp-bar"><div class="hp-fill" style="width:100%"></div></div>${card.ability?'<div class="hit-counter">0</div>':''}`;a.appendChild(el);const mult=side==='ai'?B.botMult:1;B.troops.push({el,x:tx,y:ty,lane,hp:Math.floor(card.hp*mult),maxHp:Math.floor(card.hp*mult),dmg:Math.floor(card.dmg*mult),spd:card.spd,rng:(card.rng||1)*16,as:card.as||1,side,card,cd:0,charge:card.charge?1:0,chargeBuildup:0,stun:0,hitCount:0,abilityUsed:false});}}
+function spawnTroop(card,x,y,side,lane){const a=document.getElementById('arena'),cnt=card.cnt||1;const fx=document.createElement('div');fx.className=`spawn-effect ${side}`;fx.style.left=(x-20)+'px';fx.style.top=(y-20)+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),400);for(let i=0;i<cnt;i++){const ox=cnt>1?(i-(cnt-1)/2)*12:0,tx=Math.max(10,Math.min(a.offsetWidth-10,x+ox)),ty=y+(Math.random()-0.5)*6;const el=document.createElement('div');el.className=`troop ${side}`+(card.fly?' fly':'');el.style.left=tx+'px';el.style.top=ty+'px';el.innerHTML=`<div class="sprite">${card.icon}</div><div class="hp-bar"><div class="hp-fill" style="width:100%"></div></div>${card.ability?'<div class="hit-counter">0</div>':''}`;a.appendChild(el);const mult=side==='ai'?B.botMult:1;B.troops.push({el,x:tx,y:ty,lane,hp:Math.floor(card.hp*mult),maxHp:Math.floor(card.hp*mult),dmg:Math.floor(card.dmg*mult),spd:card.spd,rng:(card.rng||1)*16,as:card.as||1,side,card,cd:0,charge:card.charge?1:0,chargeBuildup:0,stun:0,hitCount:0,abilityUsed:false});}if(side==='player')sendTroopSpawn(card,x,y,lane);}
 // Spawn a building card (including Elixir Pump)
 function spawnBuilding(card,x,y,side,lane){
 const a=document.getElementById('arena');
@@ -2967,8 +3395,11 @@ showDmg(x,y-20,'🧪 PUMP!','#9b59b6');
 }else{
 B.buildings.push(bldgData);
 }
+if(side==='player')sendBuildingSpawn(card,x,y,lane);
 }
 function castSpell(card,x,y,side){const a=document.getElementById('arena'),r=card.radius*16;const targetSide=side==='player'?'ai':'player';
+// Send to server for multiplayer sync
+if(side==='player')sendSpellCast(card,x,y);
 // Goblin Barrel - spawns goblins at target location (tower-locked: goblins only attack towers)
 if(card.id==='goblinbarrel'){
 const goblinCard=getCard('goblin');
@@ -3218,7 +3649,7 @@ function activateChampionAbility(){
 if(!B||!B.on||!B.activeChampion)return;
 const t=B.activeChampion;if(t.abilityUsed)return;
 t.abilityUsed=true;t.hitCount=10;triggerAbility(t);updateChampionAbilityButton();}
-function startLoop(){let last=performance.now();function loop(now){if(!B||!B.on)return;const dt=(now-last)/1000;last=now;B.time+=dt;const rem=Math.max(0,300-B.time);document.getElementById('timer').textContent=fmt(rem);if(rem<=0){endBattle(B.crowns.me>B.crowns.ai);return;}const rate=B.time>=120?1.6:0.8;B.elixir=Math.min(10,B.elixir+dt*rate);B.botElixir=Math.min(10,B.botElixir+dt*rate*0.85);document.getElementById('elixirFill').style.width=(B.elixir*10)+'%';document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/10';document.getElementById('doubleElixir').classList.toggle('on',B.time>=120);updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);towerAttacks(dt);aiTurn();if(B.crowns.me>=3){endBattle(true);return;}if(B.crowns.ai>=3){endBattle(false);return;}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
+function startLoop(){let last=performance.now();function loop(now){if(!B||!B.on)return;const dt=(now-last)/1000;last=now;B.time+=dt;const rem=Math.max(0,300-B.time);document.getElementById('timer').textContent=fmt(rem);if(rem<=0){endBattle(B.crowns.me>B.crowns.ai);return;}const rate=B.time>=120?1.6:0.8;B.elixir=Math.min(10,B.elixir+dt*rate);if(!B.isMultiplayer)B.botElixir=Math.min(10,B.botElixir+dt*rate*0.85);document.getElementById('elixirFill').style.width=(B.elixir*10)+'%';document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/10';document.getElementById('doubleElixir').classList.toggle('on',B.time>=120);updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);towerAttacks(dt);if(!B.isMultiplayer)aiTurn();if(B.crowns.me>=3){endBattle(true);return;}if(B.crowns.ai>=3){endBattle(false);return;}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
 function updateTroops(dt){const a=document.getElementById('arena');B.troops.forEach(t=>{if(t.hp<=0)return;if(t.stun>0){t.stun-=dt;return;}const target=findTarget(t);if(!target)return;const dx=target.x-t.x,dy=target.y-t.y,dist=Math.sqrt(dx*dx+dy*dy);if(t.card.charge&&!t.charge){t.chargeBuildup+=dt;if(t.chargeBuildup>=2)t.charge=1;}if(dist<=t.rng){t.cd-=dt;if(t.cd<=0){let dmg=t.dmg;if(t.charge){dmg*=2;t.charge=0;showDmg(t.x,t.y-12,'⚡CHARGE!','#f1c40f');}if(target.type==='tower'){t.lockedTower=target.key;B.towers[target.key].hp-=dmg;showDmg(target.x,target.y,'-'+dmg);updateTower(target.key);if(t.card.poison&&!B.towers[target.key].poisoned){B.towers[target.key].poisoned=true;B.troopPoisons.push({tower:target.key,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}else{if(t.card.spl){const sr=t.card.spl*16;B.troops.forEach(e=>{if(e.side!==t.side&&e.hp>0){const ed=Math.sqrt((e.x-target.x)**2+(e.y-target.y)**2);if(ed<sr){e.hp-=dmg;showDmg(e.x,e.y,'-'+dmg);if(t.card.poison&&!e.poisoned){e.poisoned=true;B.troopPoisons.push({target:e,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}});}else{target.hp-=dmg;showDmg(target.x,target.y,'-'+dmg);if(t.card.poison&&!target.poisoned){target.poisoned=true;B.troopPoisons.push({target,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}t.hitCount++;if(t.card.ability&&t.hitCount>=10&&!t.abilityUsed){t.abilityUsed=true;triggerAbility(t);}const counter=t.el.querySelector('.hit-counter');if(counter)counter.textContent=t.hitCount;t.cd=t.as;}}else{let spd=t.charge?t.spd*2:t.spd;const pushDist=30;B.troops.forEach(p=>{if(p!==t&&p.side===t.side&&p.hp>0&&p.spd>t.spd){const px=p.x-t.x,py=p.y-t.y,pd=Math.sqrt(px*px+py*py);const behind=(t.side==='player'?py>0:py<0);const sameArea=Math.abs(px)<25;if(pd<pushDist&&behind&&sameArea){spd=Math.max(spd,p.spd*0.85);}}});t.x+=(dx/dist)*spd*38*dt;t.y+=(dy/dist)*spd*38*dt;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';}const bar=t.el.querySelector('.hp-fill');if(bar)bar.style.width=Math.max(0,(t.hp/t.maxHp)*100)+'%';});B.troops=B.troops.filter(t=>{if(t.hp<=0){const fx=document.createElement('div');fx.className='death-effect';fx.textContent=t.card.icon;fx.style.left=t.x+'px';fx.style.top=t.y+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),500);t.el.remove();return false;}return true;});}
 function findTarget(t){const enemy=t.side==='player'?'ai':'player',tKeys=enemy==='ai'?['aL','aR','aK']:['pL','pR','pK'];let best=null,bestD=120;
 // If troop has locked onto a tower (already hit it once), keep targeting it
@@ -4314,8 +4745,8 @@ document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/'+maxEl
 const doubleActive=B.time>=60||B.isTest||(B.isCustom&&(cm.elixirRate>=2||B.time>=(cm.doubleElixirTime||60)));
 document.getElementById('doubleElixir').classList.toggle('on',doubleActive);
 updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);updateWitchSpawns(dt);updateElixirPumps(dt);updateBuildings(dt);updateChampionAbilityButton();towerAttacks(dt);
-// AI turn (skip if bot disabled)
-if(!B.isTest&&!(B.isCustom&&cm.botDisabled))aiTurn();
+// AI turn (skip if bot disabled or multiplayer)
+if(!B.isTest&&!B.isMultiplayer&&!(B.isCustom&&cm.botDisabled))aiTurn();
 // Apply chaos modifiers (either chaos mode or custom mode with chaos events)
 if(B.gameMode==='chaos'||(B.isCustom&&cm.chaosEvents))applyChaosModifiers();
 // Apply custom mode special effects

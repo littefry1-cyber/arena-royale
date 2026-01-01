@@ -54,6 +54,8 @@ class WebSocketManager:
                                         'username': payload.get('username')
                                     })
                                     print(f"Player {player_id} connected via WebSocket")
+                                    # Broadcast updated online count to all players
+                                    await self.broadcast_online_count()
                                 else:
                                     await self.send(ws, 'auth_error', {'error': 'Invalid token'})
                             else:
@@ -100,7 +102,16 @@ class WebSocketManager:
                     self.channels[channel].discard(player_id)
             del self.subscriptions[player_id]
 
+        # Handle battle disconnect (give win to opponent)
+        try:
+            from websocket.battle_sync import handle_player_disconnect
+            await handle_player_disconnect(player_id, self)
+        except Exception as e:
+            print(f"Error handling battle disconnect: {e}")
+
         print(f"Player {player_id} disconnected")
+        # Broadcast updated online count to all players
+        await self.broadcast_online_count()
 
     async def send(self, ws: web.WebSocketResponse, msg_type: str, data: Any):
         """Send a message to a WebSocket"""
@@ -160,6 +171,26 @@ class WebSocketManager:
     def get_online_players(self) -> list:
         """Get list of online player IDs"""
         return list(self.connections.keys())
+
+    async def broadcast_online_count(self):
+        """Broadcast online count to all connected players"""
+        count = self.get_online_count()
+        await self.broadcast_all('online_count', {'count': count})
+
+    async def get_online_players_with_info(self) -> list:
+        """Get list of online players with their info"""
+        from database import json_db as db
+        players = []
+        for player_id in self.connections.keys():
+            player = await db.get_player(player_id)
+            if player:
+                players.append({
+                    'id': player_id,
+                    'name': player.get('profile', {}).get('name', player.get('username', 'Unknown')),
+                    'trophies': player.get('stats', {}).get('trophies', 0),
+                    'arena': player.get('stats', {}).get('arena', 1)
+                })
+        return players
 
 
 # Global WebSocket manager instance

@@ -60,8 +60,37 @@ class Battle:
     result_reported: bool = False
 
 
-async def create_battle(player1, player2, mode: str) -> Dict:
-    """Create a new battle between two players"""
+def create_battle(player1_id: str, player2_id: str, mode: str = 'pvp') -> Battle:
+    """Create a new battle between two players (using just player IDs)"""
+    battle_id = str(uuid.uuid4())
+
+    battle = Battle(
+        id=battle_id,
+        mode=mode,
+        player1_id=player1_id,
+        player2_id=player2_id,
+        player1_deck=[],
+        player2_deck=[],
+        player1_trophies=0,
+        player2_trophies=0,
+        player1_elo=1000,
+        player2_elo=1000,
+    )
+
+    # Adjust for chaos mode
+    if mode == 'chaos':
+        battle.elixir_rate = 1.5
+        battle.duration = 180
+
+    active_battles[battle_id] = battle
+
+    print(f"Battle created: {battle_id} ({player1_id} vs {player2_id})")
+
+    return battle
+
+
+async def create_battle_from_match(player1, player2, mode: str) -> Dict:
+    """Create a new battle from matchmaking (with full player objects)"""
     battle_id = str(uuid.uuid4())
 
     battle = Battle(
@@ -318,6 +347,9 @@ async def end_battle(battle_id: str, ws_manager, timeout: bool = False) -> Optio
     await ws_manager.unsubscribe(battle.player1_id, f"battle:{battle_id}")
     await ws_manager.unsubscribe(battle.player2_id, f"battle:{battle_id}")
 
+    # Save stats to database
+    await save_battle_stats(battle_id, ws_manager)
+
     # Clean up after 30 seconds (in case of reconnects)
     asyncio.create_task(_cleanup_battle(battle_id))
 
@@ -376,3 +408,84 @@ def get_player_battle(player_id: str) -> Optional[Battle]:
             if player_id in [battle.player1_id, battle.player2_id]:
                 return battle
     return None
+
+
+async def handle_player_disconnect(player_id: str, ws_manager):
+    """Handle when a player disconnects during a battle"""
+    battle = get_player_battle(player_id)
+    if not battle:
+        return
+
+    # Give the win to the remaining player
+    if player_id == battle.player1_id:
+        battle.player2_crowns = 3
+        battle.winner_id = battle.player2_id
+    else:
+        battle.player1_crowns = 3
+        battle.winner_id = battle.player1_id
+
+    print(f"Player {player_id} disconnected from battle {battle.id}")
+    await end_battle(battle.id, ws_manager)
+
+
+async def save_battle_stats(battle_id: str, ws_manager):
+    """Save battle results to player profiles in database"""
+    if battle_id not in active_battles:
+        return
+
+    battle = active_battles[battle_id]
+    if battle.result_reported:
+        return
+
+    battle.result_reported = True
+
+    from database import json_db as db
+
+    # Determine trophy and stat changes
+    if battle.winner_id == battle.player1_id:
+        p1_won = True
+        p1_trophy_change = 30 + battle.player1_crowns * 5
+        p2_trophy_change = -20
+        p1_gold = 50 + battle.player1_crowns * 20
+        p2_gold = 10
+    elif battle.winner_id == battle.player2_id:
+        p1_won = False
+        p1_trophy_change = -20
+        p2_trophy_change = 30 + battle.player2_crowns * 5
+        p1_gold = 10
+        p2_gold = 50 + battle.player2_crowns * 20
+    else:
+        # Tie
+        p1_won = None
+        p1_trophy_change = -5
+        p2_trophy_change = -5
+        p1_gold = 15
+        p2_gold = 15
+
+    # Update player 1
+    player1 = await db.get_player(battle.player1_id)
+    if player1:
+        if 'stats' not in player1:
+            player1['stats'] = {}
+        stats = player1['stats']
+        stats['trophies'] = max(0, stats.get('trophies', 0) + p1_trophy_change)
+        stats['wins'] = stats.get('wins', 0) + (1 if p1_won == True else 0)
+        stats['losses'] = stats.get('losses', 0) + (1 if p1_won == False else 0)
+        stats['crowns'] = stats.get('crowns', 0) + battle.player1_crowns
+        player1['gold'] = player1.get('gold', 0) + p1_gold
+        await db.save_player(player1)
+
+    # Update player 2
+    player2 = await db.get_player(battle.player2_id)
+    if player2:
+        if 'stats' not in player2:
+            player2['stats'] = {}
+        stats = player2['stats']
+        stats['trophies'] = max(0, stats.get('trophies', 0) + p2_trophy_change)
+        stats['wins'] = stats.get('wins', 0) + (1 if p1_won == False else 0)
+        stats['losses'] = stats.get('losses', 0) + (1 if p1_won == True else 0)
+        stats['crowns'] = stats.get('crowns', 0) + battle.player2_crowns
+        player2['gold'] = player2.get('gold', 0) + p2_gold
+        await db.save_player(player2)
+
+    print(f"Battle stats saved for battle {battle_id}")

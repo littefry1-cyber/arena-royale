@@ -171,6 +171,131 @@ def setup_websocket_handlers():
             await ws_mgr.unsubscribe(player_id, channel)
             await ws_mgr.send_to_player(player_id, 'unsubscribed', {'channel': channel})
 
+    async def handle_get_online_players(ws_mgr, player_id, data):
+        """Get list of online players for PVP challenges"""
+        players = await ws_mgr.get_online_players_with_info()
+        # Filter out the requesting player
+        players = [p for p in players if p['id'] != player_id]
+        await ws_mgr.send_to_player(player_id, 'online_players', {'players': players})
+
+    # Store pending challenges: challenger_id -> {target_id, timestamp, challenger_info}
+    pending_challenges = {}
+
+    async def handle_challenge_player(ws_mgr, player_id, data):
+        """Send a PVP challenge to another player"""
+        from database import json_db as db
+        import time
+
+        target_id = data.get('target_id')
+        if not target_id:
+            await ws_mgr.send_to_player(player_id, 'error', {'error': 'No target specified'})
+            return
+
+        if not ws_mgr.is_online(target_id):
+            await ws_mgr.send_to_player(player_id, 'challenge_failed', {'error': 'Player is offline'})
+            return
+
+        # Get challenger info
+        challenger = await db.get_player(player_id)
+        if not challenger:
+            return
+
+        challenger_name = challenger.get('profile', {}).get('name', challenger.get('username', 'Unknown'))
+        challenger_trophies = challenger.get('stats', {}).get('trophies', 0)
+
+        # Store the challenge
+        pending_challenges[player_id] = {
+            'target_id': target_id,
+            'timestamp': time.time(),
+            'challenger_name': challenger_name,
+            'challenger_trophies': challenger_trophies
+        }
+
+        # Send challenge to target
+        await ws_mgr.send_to_player(target_id, 'challenge_received', {
+            'challenger_id': player_id,
+            'challenger_name': challenger_name,
+            'challenger_trophies': challenger_trophies
+        })
+
+        # Confirm to challenger
+        await ws_mgr.send_to_player(player_id, 'challenge_sent', {'target_id': target_id})
+
+    async def handle_challenge_response(ws_mgr, player_id, data):
+        """Accept or decline a PVP challenge"""
+        from database import json_db as db
+        from websocket.battle_sync import create_battle
+
+        challenger_id = data.get('challenger_id')
+        accepted = data.get('accepted', False)
+
+        if not challenger_id or challenger_id not in pending_challenges:
+            await ws_mgr.send_to_player(player_id, 'error', {'error': 'Challenge not found or expired'})
+            return
+
+        challenge = pending_challenges[challenger_id]
+        if challenge['target_id'] != player_id:
+            await ws_mgr.send_to_player(player_id, 'error', {'error': 'This challenge is not for you'})
+            return
+
+        # Remove the pending challenge
+        del pending_challenges[challenger_id]
+
+        if accepted:
+            # Get both players' info
+            player1 = await db.get_player(challenger_id)
+            player2 = await db.get_player(player_id)
+
+            if not player1 or not player2:
+                await ws_mgr.send_to_player(player_id, 'error', {'error': 'Player data not found'})
+                return
+
+            # Create a PVP battle
+            battle = create_battle(
+                player1_id=challenger_id,
+                player2_id=player_id,
+                mode='pvp'
+            )
+
+            # Subscribe both players to battle channel
+            await ws_mgr.subscribe(challenger_id, f"battle:{battle.id}")
+            await ws_mgr.subscribe(player_id, f"battle:{battle.id}")
+
+            # Notify challenger (player1)
+            await ws_mgr.send_to_player(challenger_id, 'challenge_accepted', {
+                'battle_id': battle.id,
+                'mode': 'pvp',
+                'you_are': 'player1',
+                'opponent_id': player_id,
+                'opponent_name': player2.get('profile', {}).get('name', player2.get('username', 'Unknown')),
+                'opponent_trophies': player2.get('stats', {}).get('trophies', 0)
+            })
+
+            # Notify accepter (player2)
+            await ws_mgr.send_to_player(player_id, 'challenge_accepted', {
+                'battle_id': battle.id,
+                'mode': 'pvp',
+                'you_are': 'player2',
+                'opponent_id': challenger_id,
+                'opponent_name': player1.get('profile', {}).get('name', player1.get('username', 'Unknown')),
+                'opponent_trophies': player1.get('stats', {}).get('trophies', 0)
+            })
+
+            print(f"PVP Battle started: {battle.id} - {challenger_id} vs {player_id}")
+        else:
+            # Notify challenger that challenge was declined
+            await ws_mgr.send_to_player(challenger_id, 'challenge_declined', {
+                'target_id': player_id
+            })
+
+    async def handle_cancel_challenge(ws_mgr, player_id, data):
+        """Cancel a pending challenge"""
+        if player_id in pending_challenges:
+            target_id = pending_challenges[player_id]['target_id']
+            del pending_challenges[player_id]
+            await ws_mgr.send_to_player(target_id, 'challenge_cancelled', {'challenger_id': player_id})
+            await ws_mgr.send_to_player(player_id, 'challenge_cancelled', {'cancelled': True})
+
     # Register handlers
     ws_manager.register_handler('queue_join', handle_queue_join)
     ws_manager.register_handler('queue_leave', handle_queue_leave)
@@ -181,6 +306,10 @@ def setup_websocket_handlers():
     ws_manager.register_handler('chat_send', handle_chat_send)
     ws_manager.register_handler('subscribe', handle_subscribe)
     ws_manager.register_handler('unsubscribe', handle_unsubscribe)
+    ws_manager.register_handler('get_online_players', handle_get_online_players)
+    ws_manager.register_handler('challenge_player', handle_challenge_player)
+    ws_manager.register_handler('challenge_response', handle_challenge_response)
+    ws_manager.register_handler('cancel_challenge', handle_cancel_challenge)
 
 
 async def start_background_tasks(app):
