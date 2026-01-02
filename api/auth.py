@@ -398,6 +398,12 @@ async def update_player_data(request: web.Request) -> web.Response:
     if 'trophy_road_claimed' in updates:
         player.setdefault('trophy_road', {})['claimed'] = updates['trophy_road_claimed']
 
+    # Cash and discount updates
+    if 'cash' in updates:
+        player.setdefault('resources', {})['cash'] = max(0, float(updates['cash']))
+    if 'discount' in updates:
+        player['discount'] = max(0, min(100, int(updates['discount'])))
+
     success = await db.save_player(player)
     if not success:
         return web.json_response({'error': 'Failed to update player'}, status=500)

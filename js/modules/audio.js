@@ -19,7 +19,7 @@ function playTone(freq, dur) {
 }
 
 // Sound effect definitions
-const SOUNDS = {
+var SOUNDS = {
   click: () => playTone(800, 50),
   deploy: () => playTone(400, 100),
   damage: () => playTone(200, 80),

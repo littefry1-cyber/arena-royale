@@ -7,7 +7,7 @@ echo.
 cd /d "%~dp0"
 
 REM Check if virtual environment exists
-if not exist ".venv\Scripts\activate.bat" (
+if not exist "venv\Scripts\activate.bat" (
     echo Virtual environment not found!
     echo Please run start_server.bat first to set up the environment.
     pause
@@ -15,7 +15,7 @@ if not exist ".venv\Scripts\activate.bat" (
 )
 
 REM Activate virtual environment
-call .venv\Scripts\activate.bat
+call venv\Scripts\activate.bat
 
 REM Start the frontend server
 python frontend_server.py

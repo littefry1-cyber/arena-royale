@@ -6,6 +6,7 @@
   <title>Arena Royale 2.4.0</title>
   <link href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
 </head>
 <body>
 <!-- Initial Loading Screen (shows immediately while game loads) -->
@@ -388,6 +389,7 @@
       <div class="section-title" style="text-align:center;font-size:18px;margin-bottom:10px">📅 DAILY REWARDS</div>
       <div id="dailyGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:15px"></div>
       <div id="dailyClaimBtn" style="text-align:center"></div>
+      <div id="highDemandContainer" style="margin-top:15px"></div>
       <div class="section" style="margin-top:15px">
         <div class="section-title">🎯 DAILY CHALLENGES</div>
         <div id="challengeList"></div>
@@ -690,6 +692,8 @@
         <div class="admin-row"><input type="number" id="admWildCards" placeholder="Wild Cards"><button onclick="setWildCards()" style="background:linear-gradient(180deg,#a855f7,#7c3aed);color:#fff">🃏 SET</button></div>
         <div class="admin-row"><input type="number" id="admStarPoints" placeholder="Star Points"><button onclick="setStarPoints()" style="background:linear-gradient(180deg,#ffd700,#ff8c00);color:#000">⭐ SET</button></div>
         <div class="admin-row"><input type="number" id="admCashBalance" placeholder="Cash Balance $"><button onclick="setCashBalance()" style="background:linear-gradient(180deg,#2ecc71,#27ae60);color:#fff">💵 SET</button></div>
+        <div class="admin-row"><input type="number" id="admDiscount" placeholder="Discount %" min="0" max="100"><button onclick="setPlayerDiscount()" style="background:linear-gradient(180deg,#e74c3c,#c0392b);color:#fff">🏷️ SET DISCOUNT</button></div>
+        <div style="font-size:8px;color:#666;margin-top:4px;text-align:center">Current Discount: <span id="currentDiscount">0%</span></div>
       </div>
       <div class="admin-section">
         <div class="admin-section-title">📦 CHESTS</div>
@@ -730,6 +734,7 @@
             <option value="gems">💎 Gems</option>
             <option value="crystals">🔮 Crystals</option>
             <option value="star_points">⭐ Star Points</option>
+            <option value="cash">💵 Cash</option>
           </select>
           <input type="number" id="sendAmount" placeholder="Amount" style="max-width:80px">
         </div>
@@ -1006,12 +1011,7 @@
     <button class="admin-close" onclick="closeAdmin()">✖ CLOSE</button>
   </div>
 </div>
-<!-- Module scripts (loaded before main game.js) -->
-<script src="js/modules/config.js"></script>
-<script src="js/modules/utils.js"></script>
-<script src="js/modules/audio.js"></script>
-<script src="js/modules/notifications.js"></script>
-<!-- Main game script -->
+<!-- Main game script (self-contained) -->
 <script src="js/game.js"></script>
 </body>
 </html>

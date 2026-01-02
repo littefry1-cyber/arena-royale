@@ -1,9 +1,10 @@
 // ========== MULTIPLAYER NETWORK LAYER ==========
-// Use current hostname for LAN access (falls back to localhost for local dev)
-const SERVER_HOST = window.location.hostname || 'localhost';
-const SERVER_URL = `http://${SERVER_HOST}:5004`;
-const WS_URL = `ws://${SERVER_HOST}:5004/ws`;
-const CONNECTION_TIMEOUT = 8000; // 8 seconds timeout for connections
+// Server config comes from config.js module
+// Use vars if modules already loaded, otherwise define
+var SERVER_HOST = window.SERVER_HOST || window.location.hostname || 'localhost';
+var SERVER_URL = window.SERVER_URL || `http://${SERVER_HOST}:5004`;
+var WS_URL = window.WS_URL || `ws://${SERVER_HOST}:5004/ws`;
+var CONNECTION_TIMEOUT = window.CONNECTION_TIMEOUT || 8000;
 
 // Fetch with timeout wrapper
 async function fetchWithTimeout(url, options = {}, timeout = CONNECTION_TIMEOUT) {
@@ -144,22 +145,44 @@ const NET = {
 
   showDisconnectWarning() {
     // Don't show if already showing or if we just started
-    if (document.getElementById('disconnectWarning')) return;
+    if (document.getElementById('maintenanceScreen')) return;
 
-    const warning = document.createElement('div');
-    warning.id = 'disconnectWarning';
-    warning.style.cssText = 'position:fixed;top:0;left:0;right:0;background:linear-gradient(180deg,#e74c3c,#c0392b);padding:12px;text-align:center;z-index:9999;animation:slideDown 0.3s ease';
-    warning.innerHTML = `
-      <div style="font-weight:900;font-size:14px;margin-bottom:4px">⚠️ SERVER DISCONNECTED</div>
-      <div style="font-size:11px;opacity:0.9">Your progress may be reset if not saved. Attempting to reconnect...</div>
+    // Full screen maintenance overlay
+    const overlay = document.createElement('div');
+    overlay.id = 'maintenanceScreen';
+    overlay.style.cssText = 'position:fixed;inset:0;background:linear-gradient(180deg,#1a1a2e,#16213e,#0f0f23);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:99999;color:#fff;font-family:"Lilita One",sans-serif';
+    overlay.innerHTML = `
+      <div style="animation:pulse 2s infinite ease-in-out">
+        <div style="font-size:80px;margin-bottom:20px">🔧</div>
+      </div>
+      <div style="font-size:28px;font-weight:900;color:#f39c12;text-shadow:0 4px 8px rgba(0,0,0,0.5);margin-bottom:15px">MAINTENANCE BREAK</div>
+      <div style="font-size:16px;color:#aaa;max-width:300px;text-align:center;line-height:1.6">
+        The servers are currently offline for maintenance. Please wait while we work on improvements!
+      </div>
+      <div id="reconnectTimer" style="margin-top:30px;font-size:14px;color:#666">
+        Reconnecting<span id="reconnectDots">...</span>
+      </div>
+      <div style="position:absolute;bottom:30px;font-size:12px;color:#444">Arena Royale • We'll be back soon!</div>
     `;
-    document.body.appendChild(warning);
+    document.body.appendChild(overlay);
+
+    // Animate the dots and update attempt count
+    let dots = 0;
+    this.reconnectDotsInterval = setInterval(() => {
+      dots = (dots + 1) % 4;
+      const dotsEl = document.getElementById('reconnectDots');
+      if (dotsEl) dotsEl.textContent = '.'.repeat(dots + 1);
+      const timerEl = document.getElementById('reconnectTimer');
+      if (timerEl && this.reconnectAttempts > 0) {
+        timerEl.innerHTML = `Reconnecting (attempt ${this.reconnectAttempts})<span id="reconnectDots">${'.'.repeat(dots + 1)}</span>`;
+      }
+    }, 500);
 
     // Add animation style if not exists
-    if (!document.getElementById('disconnectStyle')) {
+    if (!document.getElementById('maintenanceStyle')) {
       const style = document.createElement('style');
-      style.id = 'disconnectStyle';
-      style.textContent = '@keyframes slideDown{from{transform:translateY(-100%)}to{transform:translateY(0)}}';
+      style.id = 'maintenanceStyle';
+      style.textContent = '@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.1)}}';
       document.head.appendChild(style);
     }
   },
@@ -167,6 +190,12 @@ const NET = {
   hideDisconnectWarning() {
     const warning = document.getElementById('disconnectWarning');
     if (warning) warning.remove();
+    const maintenance = document.getElementById('maintenanceScreen');
+    if (maintenance) maintenance.remove();
+    if (this.reconnectDotsInterval) {
+      clearInterval(this.reconnectDotsInterval);
+      this.reconnectDotsInterval = null;
+    }
   },
 
   // REST API calls
@@ -255,12 +284,21 @@ const NET = {
   },
 
   attemptReconnect() {
-    if (this.reconnectAttempts < this.maxReconnectAttempts && this.token) {
+    // Keep trying forever when maintenance screen is showing
+    if (this.token && !this.isConnecting) {
+      this.isConnecting = true;
       this.reconnectAttempts++;
-      console.log(`Reconnecting... attempt ${this.reconnectAttempts}`);
+      const delay = Math.min(10000, 2000 * Math.min(this.reconnectAttempts, 5)); // Max 10 second delay
+      console.log(`Reconnecting... attempt ${this.reconnectAttempts} (retry in ${delay/1000}s)`);
       setTimeout(() => {
-        this.connectWebSocket().catch(console.error);
-      }, 2000 * this.reconnectAttempts);
+        this.connectWebSocket().then(() => {
+          this.isConnecting = false;
+        }).catch(() => {
+          this.isConnecting = false;
+          // If failed, try again
+          this.attemptReconnect();
+        });
+      }, delay);
     }
   },
 
@@ -1474,12 +1512,32 @@ const BOT_NAMES=['xXSlayerXx','ProGamer99','ClashKing','TowerCrusher','EliteWarr
 const SHOP_ITEMS=[{id:'gold1',name:'Pile of Gold',desc:'1,000 Gold',icon:'💰',price:50,currency:'gems',reward:{gold:1000}},{id:'gold2',name:'Sack of Gold',desc:'5,000 Gold',icon:'💰',price:200,currency:'gems',reward:{gold:5000}},{id:'gold3',name:'Vault of Gold',desc:'20,000 Gold',icon:'💰',price:700,currency:'gems',reward:{gold:20000}},{id:'gold4',name:'Treasury',desc:'100,000 Gold',icon:'🏦',price:3000,currency:'gems',reward:{gold:100000},special:true},{id:'gems1',name:'Handful of Gems',desc:'100 Gems',icon:'💎',price:1000,currency:'gold',reward:{gems:100}},{id:'gems2',name:'Pouch of Gems',desc:'500 Gems',icon:'💎',price:4500,currency:'gold',reward:{gems:500}},{id:'gems3',name:'Gem Vault',desc:'2000 Gems',icon:'💎',price:15000,currency:'gold',reward:{gems:2000}},{id:'chest1',name:'Silver Chest',desc:'Instant open!',icon:'📦',price:30,currency:'gems',reward:{chest:'silver'}},{id:'chest2',name:'Golden Chest',desc:'Great rewards!',icon:'🎁',price:80,currency:'gems',reward:{chest:'gold'}},{id:'chest3',name:'Magical Chest',desc:'Epic loot!',icon:'✨',price:200,currency:'gems',reward:{chest:'magic'}},{id:'chest4',name:'Giant Chest',desc:'Massive rewards!',icon:'🏆',price:400,currency:'gems',reward:{chest:'giant'}},{id:'chest5',name:'Legendary Chest',desc:'Guaranteed legendary!',icon:'👑',price:800,currency:'gems',reward:{chest:'legendary'},special:true},{id:'chest6',name:'Super Chest',desc:'Ultimate rewards!',icon:'💎',price:1500,currency:'gems',reward:{chest:'super'},special:true},{id:'common1',name:'Common Shards',desc:'Random +10',icon:'🤍',price:100,currency:'gold',reward:{shards:{rarity:'common',amount:10}}},{id:'common2',name:'Common Bundle',desc:'Random +50',icon:'🤍',price:400,currency:'gold',reward:{shards:{rarity:'common',amount:50}}},{id:'rare1',name:'Rare Shards',desc:'Random +8',icon:'🧡',price:400,currency:'gold',reward:{shards:{rarity:'rare',amount:8}}},{id:'rare2',name:'Rare Bundle',desc:'Random +30',icon:'🧡',price:1200,currency:'gold',reward:{shards:{rarity:'rare',amount:30}}},{id:'epic1',name:'Epic Shards',desc:'Random +5',icon:'💜',price:1500,currency:'gold',reward:{shards:{rarity:'epic',amount:5}}},{id:'epic2',name:'Epic Bundle',desc:'Random +20',icon:'💜',price:5000,currency:'gold',reward:{shards:{rarity:'epic',amount:20}}},{id:'legendary1',name:'Legendary Shards',desc:'Random +3',icon:'❤️',price:300,currency:'gems',reward:{shards:{rarity:'legendary',amount:3}}},{id:'legendary2',name:'Legendary Bundle',desc:'Random +10',icon:'❤️',price:800,currency:'gems',reward:{shards:{rarity:'legendary',amount:10}},special:true},{id:'champion1',name:'Champion Shards',desc:'Random +2',icon:'💙',price:500,currency:'gems',reward:{shards:{rarity:'champion',amount:2}},special:true},{id:'champion2',name:'Champion Bundle',desc:'Random +8',icon:'💙',price:1500,currency:'gems',reward:{shards:{rarity:'champion',amount:8}},special:true},{id:'megapack',name:'MEGA PACK',desc:'+5000G +50💎 +20 Shards',icon:'🎁',price:400,currency:'gems',reward:{gold:5000,gems:50,shards:{rarity:'random',amount:20}},special:true},{id:'ultrapack',name:'ULTRA PACK',desc:'+20000G +200💎 +50 Shards',icon:'🎊',price:1500,currency:'gems',reward:{gold:20000,gems:200,shards:{rarity:'random',amount:50}},special:true},{id:'wild',name:'Wild Card',desc:'Upgrade any card of your choice!',icon:'🎴',price:1000,currency:'gems',reward:{wild:1},special:true},{id:'book',name:'Book of Cards',desc:'Upgrade any card of your choice!',icon:'📖',price:5000,currency:'gems',reward:{book:1},special:true},{id:'crystals1',name:'Crystal Pack',desc:'100 Crystals',icon:'💠',price:500,currency:'gems',reward:{crystals:100}},{id:'crystals2',name:'Crystal Vault',desc:'500 Crystals',icon:'💠',price:2000,currency:'gems',reward:{crystals:500}},{id:'crystals3',name:'Crystal Treasury',desc:'2000 Crystals',icon:'💠',price:7000,currency:'gems',reward:{crystals:2000},special:true},{id:'emote1',name:'Extra Emotes',desc:'Unlock funny emotes',icon:'😜',price:50,currency:'crystals',reward:{emotes:['🤣','😜','🤪','😏','😒']}},{id:'emote2',name:'Pro Emotes',desc:'Unlock pro emotes',icon:'😈',price:100,currency:'crystals',reward:{emotes:['💪','🎯','⭐','🏆','💥']}},{id:'megaupgrade',name:'Mega Upgrade',desc:'Upgrade all cards by 1 level!',icon:'⬆️',price:10000,currency:'crystals',reward:{megaupgrade:1}},{id:'trophyboost',name:'Trophy Boost',desc:'+1000 Trophies',icon:'🏆',price:200,currency:'gems',reward:{trophies:1000}},{id:'starterpack',name:'Starter Pack',desc:'+2000G +100💎 +50💠',icon:'⭐',price:100,currency:'gems',reward:{gold:2000,gems:100,crystals:50},special:true},{id:'dailydeal',name:'Daily Deal',desc:'+500G +25💎 +Chest',icon:'🌟',price:25,currency:'gems',reward:{gold:500,gems:25,chest:'silver'}}];
 
 function getUpgradeCost(level,rarity){const base={common:10,rare:20,epic:40,legendary:80,champion:150};return Math.floor((base[rarity]||10)*(level*1.5));}
+function getUpgradeGemCost(level,rarity){const base={common:5,rare:10,epic:20,legendary:40,champion:75};return Math.floor((base[rarity]||5)*(level*1.2));}
 
-let P={name:'Player',deck:[],tr:0,gold:5000,gems:500,crystals:0,emotes:[...EMOTES],wins:0,losses:0,streak:0,maxStr:0,crowns:0,lvls:{},shards:{},unlocked:[...STARTER_CARDS],chests:Array(MAX_CHESTS).fill(null),lbBots:[],lastLbUpdate:0,roadClaimed:[],trophyGainPerWin:150,kingTowerLevel:1,princessLevel:1,compWins:0,compLosses:0,compTrophies:0,compBots:[],compLastUpdate:0,unlockedEmotes:[],equippedEmotes:['e1','e2','e3','e4'],unlockedTowerSkins:[],equippedTowerSkin:'tower_default',starPoints:0,favorites:[],bpLevel:1,bpXp:0,bpPremium:false,bpClaimed:[],crownChestProgress:0,battleLog:[],clan:null,lastDaily:null};
+let P={name:'Player',deck:[],tr:0,gold:5000,gems:50,crystals:0,emotes:[...EMOTES],wins:0,losses:0,streak:0,maxStr:0,crowns:0,lvls:{},shards:{},unlocked:[...STARTER_CARDS],chests:Array(MAX_CHESTS).fill(null),lbBots:[],lastLbUpdate:0,roadClaimed:[],trophyGainPerWin:150,kingTowerLevel:1,princessLevel:1,compWins:0,compLosses:0,compTrophies:0,compBots:[],compLastUpdate:0,unlockedEmotes:[],equippedEmotes:['e1','e2','e3','e4'],unlockedTowerSkins:[],equippedTowerSkin:'tower_default',starPoints:0,favorites:[],bpLevel:1,bpXp:0,bpPremium:false,bpClaimed:[],crownChestProgress:0,battleLog:[],clan:null,lastDaily:null};
 let B=null,holdTimer=null,isHolding=false,currentGameMode='normal';
 
 CARDS.forEach(c=>{P.lvls[c.id]=1;P.shards[c.id]=0;});
 try{const s=localStorage.getItem('arena_royale_v3');if(s){const d=JSON.parse(s);P={...P,...d};if(P.chests.length<MAX_CHESTS)P.chests=P.chests.concat(Array(MAX_CHESTS-P.chests.length).fill(null));}}catch(e){}
+// Ensure all required properties exist for old saves
+if(!P.medals)P.medals=0;
+if(!P.medalsWins)P.medalsWins=0;
+if(!P.medalsLosses)P.medalsLosses=0;
+if(!P.medalsHighest)P.medalsHighest=0;
+if(!P.dailyStreak)P.dailyStreak=0;
+if(!P.totalCrowns)P.totalCrowns=P.crowns||0;
+if(!P.crownChestProgress)P.crownChestProgress=0;
+if(!P.bossTokens)P.bossTokens=0;
+if(!P.bossesDefeated)P.bossesDefeated=[];
+if(!P.bossKills)P.bossKills={};
+if(!P.highDemandProgress)P.highDemandProgress={lastReset:null,trophiesStart:0,claimed:false};
+if(!Array.isArray(P.emotes))P.emotes=[...EMOTES];
+if(!Array.isArray(P.unlockedEmotes))P.unlockedEmotes=[];
+if(!Array.isArray(P.equippedEmotes))P.equippedEmotes=['e1','e2','e3','e4'];
+if(!P.cashBalance)P.cashBalance=0;
+P.discount=0; // Discount is admin-only, always reset to 0 on load (admins set it per-session)
+// Preserve spin timer - never reset it (timestamp-based for server restart persistence)
+if(P.lastSpinTime&&typeof P.lastSpinTime==='number')P.lastSpinTime=P.lastSpinTime; // Keep it
 
 function initLeaderboard(){if(!P.lbBots||P.lbBots.length===0){P.lbBots=[];for(let i=0;i<99;i++){const name=BOT_NAMES[i%BOT_NAMES.length]+(i>=BOT_NAMES.length?Math.floor(i/BOT_NAMES.length):'');const trophies=Math.min(MAX_TROPHIES,Math.max(0,Math.floor(18000-i*150+Math.random()*200-100)));P.lbBots.push({name,trophies,isBot:true});}P.lastLbUpdate=Date.now();save();}}
 initLeaderboard();
@@ -1613,12 +1671,13 @@ function updatePlay(){const a=getArena(P.tr);document.getElementById('dispTr').t
 
 function updateCards(){const el=document.getElementById('deckSlots');if(!el)return;el.innerHTML='';for(let i=0;i<8;i++){const id=P.deck[i],d=document.createElement('div');d.className='deck-slot'+(id?' filled':'');if(id){const c=getCard(id);if(c)d.innerHTML=`<span style="font-size:18px">${c.icon}</span><div class="remove" onclick="event.stopPropagation();rmDeck(${i})">×</div>`;else{P.deck.splice(i,1);i--;continue;}}else d.innerHTML='<span style="color:#4a6278;font-size:16px">+</span>';el.appendChild(d);}document.getElementById('deckCount').textContent=P.deck.length;const makeCard=(c)=>{const unlocked=P.unlocked.includes(c.id),inDeck=P.deck.includes(c.id),shards=P.shards[c.id]||0,lvl=P.lvls[c.id]||1,needed=unlocked?getUpgradeCost(lvl,c.rarity):getUpgradeCost(1,c.rarity),pct=Math.min(100,Math.floor((shards/needed)*100)),d=document.createElement('div');d.className=`game-card ${c.rarity}`+(unlocked?'':' locked')+(inDeck?' in-deck':'');d.innerHTML=`<div class="cost">${c.cost}</div>${unlocked?`<div class="lvl">${lvl}</div>`:''}<div class="icon">${c.icon}</div><div class="name">${c.name}</div>${!unlocked?`<div class="lock-icon">🔒</div><div class="shard-bar"><div class="shard-fill" style="width:${pct}%"></div></div>`:''}`;d.addEventListener('pointerdown',()=>{isHolding=false;holdTimer=setTimeout(()=>{isHolding=true;showCardDetail(c.id);},400);});d.addEventListener('pointerup',()=>{clearTimeout(holdTimer);if(!isHolding)toggleDeck(c.id);isHolding=false;});d.addEventListener('pointerleave',()=>{clearTimeout(holdTimer);isHolding=false;});return d;};['evolution','champion','legendary','epic','rare','common'].forEach(r=>{const grid=document.getElementById(r+'Grid');if(!grid)return;grid.innerHTML='';CARDS.filter(c=>c.rarity===r).forEach(c=>grid.appendChild(makeCard(c)));});}
 
-function showCardDetail(id){const c=getCard(id),unlocked=P.unlocked.includes(id),shards=P.shards[id]||0,lvl=P.lvls[id]||1,needed=unlocked?getUpgradeCost(lvl,c.rarity):getUpgradeCost(1,c.rarity),pct=Math.min(100,Math.floor((shards/needed)*100)),inDeck=P.deck.includes(id),lc=getLvlCard(id);let html=`<div class="card-detail"><div class="big-icon">${c.icon}</div><div class="card-name">${c.name}</div>`;if(unlocked)html+=`<div class="card-level">⭐ Level ${lvl}</div>`;html+=`<div class="card-rarity ${c.rarity}">${c.rarity}</div>`;if(c.desc)html+=`<div class="card-desc" style="font-size:11px;color:#8fa3b3;padding:8px 12px;text-align:center;line-height:1.4;font-style:italic">${c.desc}</div>`;if(c.ability)html+=`<div class="ability-box"><div class="ability-title">⚡ Special: ${c.ability.toUpperCase()}</div><div class="ability-desc">${c.abilityDesc}</div></div>`;if(lc.hp||lc.dmg){html+=`<div class="card-stats">`;if(lc.hp)html+=`<div class="card-stat"><div class="val">${lc.hp}</div><div class="lbl">HP</div></div>`;html+=`<div class="card-stat"><div class="val">${lc.dmg}</div><div class="lbl">DMG</div></div><div class="card-stat"><div class="val">${c.cost}</div><div class="lbl">COST</div></div></div>`;}html+=`<div class="shard-progress"><div style="display:flex;justify-content:space-between"><span>${unlocked?'Upgrade':'Unlock'}</span><span>${shards}/${needed}</span></div><div class="bar"><div class="fill" style="width:${pct}%"></div></div></div>`;if(unlocked){const canUpgrade=shards>=needed&&(lvl<15||P.unlimitedLevels);html+=`<button class="upgrade-btn" ${canUpgrade?`onclick="upgradeCard('${id}')"`:'disabled'}>${(lvl>=15&&!P.unlimitedLevels)?'MAX LEVEL':canUpgrade?`⬆️ UPGRADE TO LV.${lvl+1}`:`Need ${needed-shards} more shards`}</button><button onclick="toggleDeckFromModal('${id}')" style="width:100%;padding:10px;background:linear-gradient(180deg,${inDeck?'var(--red)':'var(--blue)'},${inDeck?'#b83227':'#2475ab'});border:none;border-radius:8px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;margin-top:8px">${inDeck?'Remove from Deck':'Add to Deck'}</button>`;}else html+=`<div style="color:#6b7c8a;font-size:10px;margin-top:8px">🔒 Collect ${needed} shards to unlock</div>`;html+=`</div><button class="modal-close" onclick="closeCardModal()">Close</button>`;document.getElementById('cardModalBox').innerHTML=html;document.getElementById('cardModal').classList.add('on');}
-function upgradeCard(id){const c=getCard(id),lvl=P.lvls[id]||1,needed=getUpgradeCost(lvl,c.rarity);if(P.shards[id]>=needed&&(lvl<15||P.unlimitedLevelCard===id)){P.shards[id]-=needed;P.lvls[id]=lvl+1;save();showCardDetail(id);updateCards();}}
+function showCardDetail(id){const c=getCard(id),unlocked=P.unlocked.includes(id),shards=P.shards[id]||0,lvl=P.lvls[id]||1,shardNeed=unlocked?getUpgradeCost(lvl,c.rarity):1,gemNeed=unlocked?getUpgradeGemCost(lvl,c.rarity):0,pct=Math.min(100,Math.floor((shards/shardNeed)*100)),inDeck=P.deck.includes(id),lc=getLvlCard(id);let html=`<div class="card-detail"><div class="big-icon">${c.icon}</div><div class="card-name">${c.name}</div>`;if(unlocked)html+=`<div class="card-level">⭐ Level ${lvl}</div>`;html+=`<div class="card-rarity ${c.rarity}">${c.rarity}</div>`;if(c.desc)html+=`<div class="card-desc" style="font-size:11px;color:#8fa3b3;padding:8px 12px;text-align:center;line-height:1.4;font-style:italic">${c.desc}</div>`;if(c.ability)html+=`<div class="ability-box"><div class="ability-title">⚡ Special: ${c.ability.toUpperCase()}</div><div class="ability-desc">${c.abilityDesc}</div></div>`;if(lc.hp||lc.dmg){html+=`<div class="card-stats">`;if(lc.hp)html+=`<div class="card-stat"><div class="val">${lc.hp}</div><div class="lbl">HP</div></div>`;html+=`<div class="card-stat"><div class="val">${lc.dmg}</div><div class="lbl">DMG</div></div><div class="card-stat"><div class="val">${c.cost}</div><div class="lbl">COST</div></div></div>`;}html+=`<div class="shard-progress"><div style="display:flex;justify-content:space-between"><span>${unlocked?'Shards':'Unlock (1 shard)'}</span><span>${shards}/${shardNeed}</span></div><div class="bar"><div class="fill" style="width:${pct}%"></div></div></div>`;if(unlocked){const hasShards=shards>=shardNeed,hasGems=P.gems>=gemNeed,canUpgrade=hasShards&&hasGems&&(lvl<15||P.unlimitedLevelCard===id);let btnText;if(lvl>=15&&P.unlimitedLevelCard!==id)btnText='MAX LEVEL';else if(!hasShards)btnText=`Need ${shardNeed-shards} more shards`;else if(!hasGems)btnText=`Need ${gemNeed} 💎 gems`;else btnText=`⬆️ UPGRADE (${shardNeed} shards + ${gemNeed} 💎)`;html+=`<button class="upgrade-btn" ${canUpgrade?`onclick="upgradeCard('${id}')"`:'disabled'}>${btnText}</button><button onclick="toggleDeckFromModal('${id}')" style="width:100%;padding:10px;background:linear-gradient(180deg,${inDeck?'var(--red)':'var(--blue)'},${inDeck?'#b83227':'#2475ab'});border:none;border-radius:8px;color:#fff;font-weight:800;font-size:12px;cursor:pointer;margin-top:8px">${inDeck?'Remove from Deck':'Add to Deck'}</button>`;}else{const canUnlock=shards>=1;html+=`<button class="upgrade-btn" ${canUnlock?`onclick="unlockCardWithShard('${id}')"`:'disabled'}>${canUnlock?'🔓 UNLOCK CARD':'Need 1 shard to unlock'}</button>`;}html+=`</div><button class="modal-close" onclick="closeCardModal()">Close</button>`;document.getElementById('cardModalBox').innerHTML=html;document.getElementById('cardModal').classList.add('on');}
+function upgradeCard(id){const c=getCard(id),lvl=P.lvls[id]||1,shardCost=getUpgradeCost(lvl,c.rarity),gemCost=getUpgradeGemCost(lvl,c.rarity);if(P.shards[id]>=shardCost&&P.gems>=gemCost&&(lvl<15||P.unlimitedLevelCard===id)){P.shards[id]-=shardCost;P.gems-=gemCost;P.lvls[id]=lvl+1;save();showCardDetail(id);updateCards();showNotify(`⬆️ Upgraded to Lv.${lvl+1}!\n-${shardCost} shards -${gemCost} gems`,'success');}else if(P.gems<gemCost){showNotify(`Need ${gemCost} gems to upgrade!`,'error','💎');}}
+function unlockCardWithShard(id){if(!P.unlocked.includes(id)&&(P.shards[id]||0)>=1){P.shards[id]-=1;P.unlocked.push(id);P.lvls[id]=1;save();showCardDetail(id);updateCards();showNotify(`🔓 ${getCard(id).name} Unlocked!`,'success');}}
 function closeCardModal(){document.getElementById('cardModal').classList.remove('on');}
 function openUpgradeModal(){document.getElementById('upgradeModalBox').innerHTML='<div class="modal-title">Choose a card to upgrade</div>'+CARDS.filter(c=>P.unlocked.includes(c.id)).map(c=>`<div class="upgrade-card" onclick="upgradeCard('${c.id}')">${c.icon} ${c.name} (Lv.${P.lvls[c.id]||1})</div>`).join('')+'<button class="modal-close" onclick="closeUpgradeModal()">Close</button>';document.getElementById('upgradeModal').classList.add('on');}
 function closeUpgradeModal(){document.getElementById('upgradeModal').classList.remove('on');}
-function upgradeCard(id){if((P.lvls[id]||1)<15||P.unlimitedLevels){P.lvls[id]=(P.lvls[id]||1)+1;save();updateCards();showNotify('⬆️ Card Upgraded!\nNow Level '+(P.lvls[id]||1),'success');closeUpgradeModal();}else showNotify('Already max level!','info','⚠️');}
+function upgradeCardFromModal(id){if((P.lvls[id]||1)<15||P.unlimitedLevelCard===id){P.lvls[id]=(P.lvls[id]||1)+1;save();updateCards();showNotify('⬆️ Card Upgraded!\nNow Level '+(P.lvls[id]||1),'success');closeUpgradeModal();}else showNotify('Already max level!','info','⚠️');}
 function showRankUp(newArena){document.getElementById('rankUpModalBox').innerHTML=`<div class="rank-up-title">🏆 RANK UP!</div><div class="rank-up-arena">${newArena.icon} ${newArena.name}</div><div class="rank-up-desc">Congratulations! You've reached a new arena!</div><button class="modal-close" onclick="closeRankUpModal()">Continue</button>`;document.getElementById('rankUpModal').classList.add('on');}
 function closeRankUpModal(){document.getElementById('rankUpModal').classList.remove('on');}
 function toggleDeckFromModal(id){toggleDeck(id);showCardDetail(id);updateCards();}
@@ -1627,19 +1686,31 @@ function rmDeck(i){P.deck.splice(i,1);save();updateCards();}
 function clearDeck(){P.deck=[];save();updateCards();}
 function randomDeck(){P.deck=[];const available=CARDS.filter(c=>P.unlocked.includes(c.id)).sort(()=>0.5-Math.random());for(const c of available){if(P.deck.length>=8)break;P.deck.push(c.id);}save();updateCards();}
 
-function getSkipCost(timeLeft){return Math.max(1,Math.ceil(timeLeft/60));}
+function getSkipCost(timeLeft){if(!isFinite(timeLeft)||timeLeft<=0)return 1;return Math.max(1,Math.ceil(timeLeft/60));}
 function getChestTimeLeft(chest){if(!chest||!chest.unlocking)return Infinity;const type=CHEST_TYPES.find(t=>t.id===chest.type);const elapsed=(Date.now()-chest.startTime)/1000;return Math.max(0,type.time-elapsed);}
 function updateChestNotif(){const readyCount=P.chests.filter(c=>c&&c.unlocking&&getChestTimeLeft(c)<=0).length;const notif=document.getElementById('chestNotif');if(readyCount>0){notif.textContent=readyCount;notif.style.display='flex';}else notif.style.display='none';}
 function updateChests(){const el=document.getElementById('chestSlots');if(!el)return;document.getElementById('dispGoldC').textContent=P.gold.toLocaleString();document.getElementById('dispGemsC').textContent=P.gems.toLocaleString();const chestCount=P.chests.filter(c=>c!==null).length;document.getElementById('chestCount').textContent=`${chestCount}/${MAX_CHESTS} Chests`;el.innerHTML='';const unlockingIdx=P.chests.findIndex(c=>c&&c.unlocking&&getChestTimeLeft(c)>0);P.chests.forEach((chest,i)=>{const slot=document.createElement('div');if(!chest){slot.className='chest-slot empty';slot.innerHTML='<div class="chest-icon" style="font-size:16px">➕</div>';}else{const type=CHEST_TYPES.find(t=>t.id===chest.type);const timeLeft=getChestTimeLeft(chest),isReady=chest.unlocking&&timeLeft<=0,skipCost=getSkipCost(timeLeft);slot.className='chest-slot has-chest'+(isReady?' ready':'');let html=`<div class="chest-icon">${type.icon}</div><div style="font-size:6px;font-weight:800">${type.name}</div>`;if(chest.unlocking){if(isReady)html+=`<div class="chest-action">OPEN!</div>`;else html+=`<div class="chest-timer">${fmt(timeLeft)}</div><button class="skip-btn" onclick="event.stopPropagation();confirmSkip(${i})">💎${skipCost}</button>`;}else html+=unlockingIdx===-1?`<div class="chest-action">Unlock</div>`:`<div class="chest-timer">${fmt(type.time)}</div>`;slot.innerHTML=html;slot.onclick=()=>handleChestClick(i);}el.appendChild(slot);});}
 function confirmSkip(idx){const chest=P.chests[idx];if(!chest||!chest.unlocking)return;const timeLeft=getChestTimeLeft(chest);if(timeLeft<=0)return;const skipCost=getSkipCost(timeLeft);const modal=document.createElement('div');modal.className='confirm-modal';modal.innerHTML=`<div class="confirm-box"><div class="confirm-title">⏩ Skip Timer?</div><div class="confirm-cost">💎 ${skipCost}</div>${P.gems<skipCost?'<div style="color:var(--red);font-size:10px">Not enough gems!</div>':''}<div class="confirm-btns"><button class="confirm-btn no" onclick="this.closest('.confirm-modal').remove()">Cancel</button><button class="confirm-btn yes" ${P.gems<skipCost?'disabled style="opacity:0.5"':''} onclick="skipChest(${idx});this.closest('.confirm-modal').remove()">Skip!</button></div></div>`;document.body.appendChild(modal);}
 function skipChest(idx){const chest=P.chests[idx];if(!chest||!chest.unlocking)return;const timeLeft=getChestTimeLeft(chest),skipCost=getSkipCost(timeLeft);if(P.gems<skipCost)return;P.gems-=skipCost;const type=CHEST_TYPES.find(t=>t.id===chest.type);chest.startTime=Date.now()-(type.time*1000);save();updateChests();}
 function handleChestClick(idx){const chest=P.chests[idx];if(!chest)return;const timeLeft=getChestTimeLeft(chest);if(chest.unlocking&&timeLeft<=0)openChest(idx);else if(!chest.unlocking){const unlockingIdx=P.chests.findIndex(c=>c&&c.unlocking&&getChestTimeLeft(c)>0);if(unlockingIdx===-1){chest.unlocking=true;chest.startTime=Date.now();save();updateChests();}}}
-function getChestCards(type){const cardCount=type.cards,rewards=[];for(let i=0;i<cardCount;i++){let roll=Math.random(),rarity='common';if(type.id==='legendary'||type.id==='super')rarity=Math.random()<0.3?'champion':'legendary';else{if(roll<0.005)rarity='champion';else if(roll<0.02)rarity='legendary';else if(roll<0.08)rarity='epic';else if(roll<0.25)rarity='rare';}const available=CARDS.filter(c=>c.rarity===rarity),card=available[Math.floor(Math.random()*available.length)],isNew=!P.unlocked.includes(card.id),shardsGained=Math.floor(Math.random()*10)+5;rewards.push({card,shardsGained,isNew});}return rewards;}
-function openChest(idx){const chest=P.chests[idx],type=CHEST_TYPES.find(t=>t.id===chest.type),goldReward=type.gold[0]+Math.floor(Math.random()*(type.gold[1]-type.gold[0])),gemsReward=Math.floor(Math.random()*20)+10,crystalsReward = Math.floor(Math.random()*10),cardRewards=getChestCards(type);P.gold+=goldReward;P.gems+=gemsReward;P.crystals += crystalsReward;if(Math.random()<0.001){openUpgradeModal();showNotify('📖 Bonus: Book of Cards!\nChoose a card to upgrade!','epic');}cardRewards.forEach(r=>{P.shards[r.card.id]=(P.shards[r.card.id]||0)+r.shardsGained;const needed=getUpgradeCost(1,r.card.rarity);if(P.shards[r.card.id]>=needed&&!P.unlocked.includes(r.card.id)){P.unlocked.push(r.card.id);r.unlocked=true;}});P.chests[idx]=null;save();const overlay=document.createElement('div');overlay.className='chest-open-overlay';let cardsHtml=cardRewards.map(r=>`<div class="reward-card${r.isNew||r.unlocked?' new':''}"><div class="rc-icon">${r.card.icon}</div><div class="rc-name">${r.card.name}</div><div class="rc-shards">+${r.shardsGained}</div>${r.unlocked?'<div class="rc-new">🎉 NEW!</div>':''}</div>`).join('');overlay.innerHTML=`<div class="chest-opening">${type.icon}</div><div class="chest-rewards"><div style="font-family:'Lilita One';font-size:20px;color:var(--gold);margin-bottom:10px">Rewards!</div><div class="reward-item">💰 <span>+${goldReward.toLocaleString()}</span></div><div class="reward-item">💎 <span>+${gemsReward}</span></div><div class="reward-item">💠 <span>+${crystalsReward}</span></div><div style="margin:8px 0;display:flex;flex-wrap:wrap;justify-content:center">${cardsHtml}</div><button style="margin-top:12px;padding:10px 30px;background:var(--gold);border:none;border-radius:10px;font-family:'Lilita One';font-size:14px;color:#fff;cursor:pointer" onclick="this.closest('.chest-open-overlay').remove();updateChests();updateCards();">Collect!</button></div>`;document.body.appendChild(overlay);}
+function getChestCards(type){const cardCount=type.cards,rewards=[];for(let i=0;i<cardCount;i++){let roll=Math.random(),rarity='common';if(type.id==='legendary'||type.id==='super')rarity=Math.random()<0.3?'champion':'legendary';else{if(roll<0.005)rarity='champion';else if(roll<0.02)rarity='legendary';else if(roll<0.08)rarity='epic';else if(roll<0.25)rarity='rare';}let available=CARDS.filter(c=>c.rarity===rarity);if(available.length===0)available=CARDS.filter(c=>c.rarity==='common');if(available.length===0)continue;
+// PRIORITIZE unlocked cards - locked cards are VERY rare (5% chance)
+const unlockedCards=available.filter(c=>P.unlocked.includes(c.id));
+const lockedCards=available.filter(c=>!P.unlocked.includes(c.id));
+let card;
+if(unlockedCards.length>0&&(lockedCards.length===0||Math.random()>0.05)){
+  card=unlockedCards[Math.floor(Math.random()*unlockedCards.length)];
+}else if(lockedCards.length>0){
+  card=lockedCards[Math.floor(Math.random()*lockedCards.length)];
+}else{
+  card=available[Math.floor(Math.random()*available.length)];
+}
+const isNew=!P.unlocked.includes(card.id),shardsGained=Math.floor(Math.random()*10)+5;rewards.push({card,shardsGained,isNew});}return rewards;}
+function openChest(idx){const chest=P.chests[idx],type=CHEST_TYPES.find(t=>t.id===chest.type),goldReward=type.gold[0]+Math.floor(Math.random()*(type.gold[1]-type.gold[0])),gemsReward=Math.random()<0.1?1:0,crystalsReward = Math.floor(Math.random()*10),cardRewards=getChestCards(type);P.gold+=goldReward;P.gems+=gemsReward;P.crystals += crystalsReward;if(Math.random()<0.001){openUpgradeModal();showNotify('📖 Bonus: Book of Cards!\nChoose a card to upgrade!','epic');}cardRewards.forEach(r=>{P.shards[r.card.id]=(P.shards[r.card.id]||0)+r.shardsGained;const needed=getUpgradeCost(1,r.card.rarity);if(P.shards[r.card.id]>=needed&&!P.unlocked.includes(r.card.id)){P.unlocked.push(r.card.id);r.unlocked=true;}});P.chests[idx]=null;save();const overlay=document.createElement('div');overlay.className='chest-open-overlay';let cardsHtml=cardRewards.map(r=>`<div class="reward-card${r.isNew||r.unlocked?' new':''}"><div class="rc-icon">${r.card.icon}</div><div class="rc-name">${r.card.name}</div><div class="rc-shards">+${r.shardsGained}</div>${r.unlocked?'<div class="rc-new">🎉 NEW!</div>':''}</div>`).join('');overlay.innerHTML=`<div class="chest-opening">${type.icon}</div><div class="chest-rewards"><div style="font-family:'Lilita One';font-size:20px;color:var(--gold);margin-bottom:10px">Rewards!</div><div class="reward-item">💰 <span>+${goldReward.toLocaleString()}</span></div><div class="reward-item">💎 <span>+${gemsReward}</span></div><div class="reward-item">💠 <span>+${crystalsReward}</span></div><div style="margin:8px 0;display:flex;flex-wrap:wrap;justify-content:center">${cardsHtml}</div><button style="margin-top:12px;padding:10px 30px;background:var(--gold);border:none;border-radius:10px;font-family:'Lilita One';font-size:14px;color:#fff;cursor:pointer" onclick="this.closest('.chest-open-overlay').remove();updateChests();updateCards();">Collect!</button></div>`;document.body.appendChild(overlay);}
 function addChest(chestType){const emptySlot=P.chests.findIndex(c=>c===null);if(emptySlot===-1)return false;P.chests[emptySlot]={type:chestType.id,startTime:null,unlocking:false};save();return true;}
 setInterval(()=>{updateChests();updateChestNotif();},1000);
 
-function updateShop(){document.getElementById('dispGoldS').textContent=P.gold.toLocaleString();document.getElementById('dispGemsS').textContent=P.gems.toLocaleString();document.getElementById('dispCrystals').textContent=P.crystals.toLocaleString();const grid=document.getElementById('shopGrid');grid.innerHTML='';const sections=[{title:'⭐ SPECIAL OFFERS',items:SHOP_ITEMS.filter(i=>i.special)},{title:'💰 Resources',items:SHOP_ITEMS.filter(i=>(i.reward.gold||i.reward.gems)&&!i.reward.shards&&!i.special&&!i.reward.trophies)},{title:'📦 Chests',items:SHOP_ITEMS.filter(i=>i.reward.chest&&!i.special)},{title:'🎴 Card Shards',items:SHOP_ITEMS.filter(i=>i.reward.shards&&!i.special)}];sections.forEach(sec=>{if(sec.items.length===0)return;const section=document.createElement('div');section.className='shop-section';section.innerHTML=`<div class="shop-section-title">${sec.title}</div>`;const itemsDiv=document.createElement('div');itemsDiv.className='shop-items';sec.items.forEach(item=>{const div=document.createElement('div');div.className='shop-item'+(item.special?' special':'');div.innerHTML=`<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div><div class="item-price ${item.currency}">${item.currency==='gems'?'💎':'💰'} ${item.price}</div>`;div.onclick=()=>buyItem(item);itemsDiv.appendChild(div);});section.appendChild(itemsDiv);grid.appendChild(section);});}
+function updateShop(){document.getElementById('dispGoldS').textContent=P.gold.toLocaleString();document.getElementById('dispGemsS').textContent=P.gems.toLocaleString();document.getElementById('dispCrystals').textContent=P.crystals.toLocaleString();const grid=document.getElementById('shopGrid');grid.innerHTML='';const sections=[{title:'⭐ SPECIAL OFFERS',items:SHOP_ITEMS.filter(i=>i.special)},{title:'💰 Resources',items:SHOP_ITEMS.filter(i=>(i.reward.gold||i.reward.gems)&&!i.reward.shards&&!i.special&&!i.reward.trophies)},{title:'📦 Chests',items:SHOP_ITEMS.filter(i=>i.reward.chest&&!i.special)}];sections.forEach(sec=>{if(sec.items.length===0)return;const section=document.createElement('div');section.className='shop-section';section.innerHTML=`<div class="shop-section-title">${sec.title}</div>`;const itemsDiv=document.createElement('div');itemsDiv.className='shop-items';sec.items.forEach(item=>{const div=document.createElement('div');div.className='shop-item'+(item.special?' special':'');div.innerHTML=`<div class="item-icon">${item.icon}</div><div class="item-name">${item.name}</div><div class="item-desc">${item.desc}</div><div class="item-price ${item.currency}">${item.currency==='gems'?'💎':'💰'} ${item.price}</div>`;div.onclick=()=>buyItem(item);itemsDiv.appendChild(div);});section.appendChild(itemsDiv);grid.appendChild(section);});}
 function buyItem(item){const currency=item.currency==='gems'?P.gems:P.gold;if(currency<item.price){showNotify(`Not enough ${item.currency}!`,'error');return;}if(item.currency==='gems')P.gems-=item.price;else if(item.currency==='crystals'){if(P.crystals<item.price){showNotify('Not enough crystals!','error','💠');return;}P.crystals-=item.price;}else P.gold-=item.price;if(item.reward.gold)P.gold+=item.reward.gold;if(item.reward.gems)P.gems+=item.reward.gems;if(item.reward.trophies)P.tr=P.tr+item.reward.trophies;if(item.reward.chest){const chestType=CHEST_TYPES.find(t=>t.id===item.reward.chest);if(!addChest(chestType)){showNotify('No empty chest slots!','error','📦');if(item.currency==='gems')P.gems+=item.price;else P.gold+=item.price;return;}}if(item.reward.shards){let rarity=item.reward.shards.rarity;if(rarity==='random'){const rarities=['common','common','common','rare','rare','epic','legendary'];rarity=rarities[Math.floor(Math.random()*rarities.length)];}const cards=CARDS.filter(c=>c.rarity===rarity),card=cards[Math.floor(Math.random()*cards.length)];P.shards[card.id]=(P.shards[card.id]||0)+item.reward.shards.amount;const needed=getUpgradeCost(1,card.rarity);if(P.shards[card.id]>=needed&&!P.unlocked.includes(card.id)){P.unlocked.push(card.id);showNotify(`🎉 Card Unlocked!\n${card.icon} ${card.name}`,'success');}else showNotify(`+${item.reward.shards.amount} ${card.name} shards!`,'success','🎴');}if(item.reward.wild){openUpgradeModal();}if(item.reward.book){openUpgradeModal();}if(item.reward.crystals)P.crystals+=item.reward.crystals;if(item.reward.emotes)P.emotes=[...new Set([...P.emotes,...item.reward.emotes])];if(item.reward.megaupgrade){CARDS.forEach(c=>{if(P.unlocked.includes(c.id)&&(P.lvls[c.id]||1)<15)P.lvls[c.id]=(P.lvls[c.id]||1)+1;});save();updateCards();showNotify('⬆️ MEGA UPGRADE!\nAll cards upgraded!','epic');}save();updateShop();updateChests();updateCards();updatePlay();}
 
 function renderStarShop(){
@@ -1696,32 +1767,79 @@ async function updateLeaderboard(){
 const input=document.getElementById('playerNameInput');if(input)input.value=P.name;
 const el=document.getElementById('lbList');
 const playerTitle=getCurrentTitle();
+const avatarColors=['#3498db','#9b59b6','#e74c3c','#f39c12','#1abc9c','#e91e63','#00bcd4','#ff5722','#8bc34a','#673ab7'];
+const getAvatarColor=(name)=>avatarColors[name.charCodeAt(0)%avatarColors.length];
+const getInitials=(name)=>name.slice(0,2).toUpperCase();
+const getArenaName=(trophies)=>{
+  if(trophies>=50000)return'🌟 Legend';
+  if(trophies>=30000)return'👑 Champion';
+  if(trophies>=15000)return'🏆 Master';
+  if(trophies>=8000)return'💎 Diamond';
+  if(trophies>=4000)return'🥇 Gold';
+  if(trophies>=2000)return'🥈 Silver';
+  if(trophies>=1000)return'🥉 Bronze';
+  return'⚔️ Arena';
+};
+
+const renderRow=(p,rank,isMe)=>{
+  const div=document.createElement('div');
+  const rankClass=rank<=3?` rank-${rank} top3`:'';
+  div.className='lb-row'+(isMe?' you':'')+rankClass;
+  const initial=getInitials(p.name);
+  const color=getAvatarColor(p.name);
+  const arenaName=getArenaName(p.trophies);
+  div.innerHTML=`
+    <div class="lb-rank"><div class="lb-rank-badge">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div></div>
+    <div class="lb-avatar" style="background:linear-gradient(145deg,${color},${color}dd)">${initial}</div>
+    <div class="lb-info">
+      <div class="lb-name">${p.name}${isMe?' <span style="opacity:0.7;font-size:10px">(YOU)</span>':''}</div>
+      <div class="lb-subtitle">${arenaName}</div>
+    </div>
+    <div class="lb-trophies">🏆 ${p.trophies.toLocaleString()}</div>
+  `;
+  return div;
+};
 
 // Try to fetch real leaderboard if online
 if(NET.isOnline){
   try{
     const data=await NET.api('/api/leaderboard/trophies?limit=130');
-    el.innerHTML='';
-    const botTitles=['🐣','⚔️','🥊','🎖️','💎','🏅','🥉','🥈','🥇','🏆','👑','🌟'];
+    el.innerHTML='<div class="lb-header"><span>RANK</span><span>PLAYER</span><span>TROPHIES</span></div>';
     data.players.forEach((p,i)=>{
-      const rank=i+1,div=document.createElement('div');
+      const rank=i+1;
       const isMe=p.id===NET.playerId;
-      div.className='lb-row'+(isMe?' you':'')+(rank<=3?' top3':'');
-      const titleIcon=botTitles[Math.floor(p.trophies/5000)%botTitles.length];
-      div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${titleIcon}</span>${p.name}${isMe?' (YOU)':''}</div><div class="lb-trophies">🏆 ${p.trophies.toLocaleString()}</div>`;
-      el.appendChild(div);
+      el.appendChild(renderRow(p,rank,isMe));
     });
     // Show player rank if not in top 130
     if(data.player_rank>130){
-      const div=document.createElement('div');div.className='lb-row you';div.style.marginTop='12px';
-      div.innerHTML=`<div class="lb-rank">#${data.player_rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${playerTitle.icon}</span>${P.name} (YOU)</div><div class="lb-trophies">🏆 ${P.tr.toLocaleString()}</div>`;
-      el.appendChild(div);
+      const divider=document.createElement('div');
+      divider.className='lb-your-rank';
+      el.appendChild(divider);
+      el.appendChild(renderRow({name:P.name,trophies:P.tr},data.player_rank,true));
     }
     return;
   }catch(e){console.warn('Failed to fetch leaderboard:',e);}
 }
 // Fallback to local bots if offline
-const lb=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false,title:playerTitle}];lb.sort((a,b)=>b.trophies-a.trophies);const top130=lb.slice(0,130);el.innerHTML='';const botTitles=['🐣','⚔️','🥊','🎖️','💎','🏅','🥉','🥈','🥇','🏆','👑','🌟'];top130.forEach((p,i)=>{const rank=i+1,div=document.createElement('div');div.className='lb-row'+(!p.isBot?' you':'')+(rank<=3?' top3':'');const titleIcon=p.isBot?botTitles[Math.floor(p.trophies/5000)%botTitles.length]:p.title.icon;div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${titleIcon}</span>${p.name}${!p.isBot?' (YOU)':''}</div><div class="lb-trophies">🏆 ${p.trophies.toLocaleString()}${p.change>0?'<span class="arrow up">⬆️</span>':p.change<0?'<span class="arrow down">⬇️</span>':''}</div>`;el.appendChild(div);if(p.isBot) p.change=0;});const playerInTop=top130.some(p=>!p.isBot);if(!playerInTop){const allSorted=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false}].sort((a,b)=>b.trophies-a.trophies);const playerRank=allSorted.findIndex(p=>!p.isBot)+1;const div=document.createElement('div');div.className='lb-row you';div.style.marginTop='12px';div.innerHTML=`<div class="lb-rank">#${playerRank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${playerTitle.icon}</span>${P.name} (YOU)</div><div class="lb-trophies">🏆 ${P.tr.toLocaleString()}</div>`;el.appendChild(div);}}
+const lb=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false,title:playerTitle}];
+lb.sort((a,b)=>b.trophies-a.trophies);
+const top130=lb.slice(0,130);
+el.innerHTML='<div class="lb-header"><span>RANK</span><span>PLAYER</span><span>TROPHIES</span></div>';
+top130.forEach((p,i)=>{
+  const rank=i+1;
+  const isMe=!p.isBot;
+  el.appendChild(renderRow(p,rank,isMe));
+  if(p.isBot)p.change=0;
+});
+const playerInTop=top130.some(p=>!p.isBot);
+if(!playerInTop){
+  const allSorted=[...P.lbBots,{name:P.name,trophies:P.tr,isBot:false}].sort((a,b)=>b.trophies-a.trophies);
+  const playerRank=allSorted.findIndex(p=>!p.isBot)+1;
+  const divider=document.createElement('div');
+  divider.className='lb-your-rank';
+  el.appendChild(divider);
+  el.appendChild(renderRow({name:P.name,trophies:P.tr},playerRank,true));
+}}
 
 // Medals Leaderboard
 function initMedalsBots(){
@@ -1752,13 +1870,47 @@ function updateMedalsLB(){
 
   // Bots slowly gain medals (only gain, never lose much)
   P.medalsBots.forEach(bot=>{
-    // 80% chance to gain 1-15 medals, 20% chance to lose 0-5
     if(Math.random()<0.8){
       bot.medals+=Math.floor(Math.random()*15)+1;
     }else{
       bot.medals=Math.max(0,bot.medals-Math.floor(Math.random()*5));
     }
   });
+
+  const avatarColors=['#ffd700','#ff8c00','#f39c12','#e67e22','#d68910','#b7950b','#9a7d0a','#7d6608','#5f4d00','#f1c40f'];
+  const getAvatarColor=(name)=>avatarColors[name.charCodeAt(0)%avatarColors.length];
+  const getInitials=(name)=>name.slice(0,2).toUpperCase();
+  const getMedalRank=(medals)=>{
+    if(medals>=1000)return'🌟 Legend';
+    if(medals>=500)return'👑 Champion';
+    if(medals>=300)return'🏆 Master';
+    if(medals>=200)return'💎 Diamond';
+    if(medals>=150)return'🥇 Gold';
+    if(medals>=100)return'🥈 Silver';
+    return'🥉 Bronze';
+  };
+
+  const renderMedalRow=(p,rank,isMe)=>{
+    const div=document.createElement('div');
+    const rankClass=rank<=3?` rank-${rank} top3`:'';
+    div.className='lb-row'+(isMe?' you':'')+rankClass;
+    if(rank===1)div.style.background='linear-gradient(145deg,rgba(255,215,0,0.4),rgba(255,193,7,0.3))';
+    else if(rank===2)div.style.background='linear-gradient(145deg,rgba(192,192,192,0.3),rgba(169,169,169,0.2))';
+    else if(rank===3)div.style.background='linear-gradient(145deg,rgba(205,127,50,0.3),rgba(184,115,51,0.2))';
+    const initial=getInitials(p.name);
+    const color=getAvatarColor(p.name);
+    const medalRank=getMedalRank(p.medals);
+    div.innerHTML=`
+      <div class="lb-rank"><div class="lb-rank-badge" style="${rank<=3?'background:linear-gradient(145deg,#ffd700,#ff8c00);color:#000':''}">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div></div>
+      <div class="lb-avatar" style="background:linear-gradient(145deg,${color},${color}dd)">${initial}</div>
+      <div class="lb-info">
+        <div class="lb-name">${p.name}${isMe?' <span style="opacity:0.7;font-size:10px">(YOU)</span>':''}</div>
+        <div class="lb-subtitle">${medalRank}</div>
+      </div>
+      <div class="lb-trophies" style="background:rgba(255,215,0,0.15);color:#ffd700">🏅 ${p.medals.toLocaleString()}</div>
+    `;
+    return div;
+  };
 
   const playerTitle=getCurrentTitle();
   const lb=[...P.medalsBots,{name:P.name,medals:P.medals||0,isBot:false,title:playerTitle}];
@@ -1767,32 +1919,26 @@ function updateMedalsLB(){
 
   const el=document.getElementById('medalsLbList');
   if(!el)return;
-  el.innerHTML='';
-  const botTitles=['🐣','⚔️','🥊','🎖️','💎','🏅','🥉','🥈','🥇','🏆','👑','🌟'];
+  el.innerHTML='<div class="lb-header"><span>RANK</span><span>PLAYER</span><span>MEDALS</span></div>';
 
   top100.forEach((p,i)=>{
     const rank=i+1;
-    const div=document.createElement('div');
-    div.className='lb-row'+(!p.isBot?' you':'')+(rank<=3?' top3':'');
-    div.style.background=rank<=3?'linear-gradient(145deg,#ffd700,#ff8c00)':'';
-    const titleIcon=p.isBot?botTitles[Math.floor(p.medals/500)%botTitles.length]:p.title.icon;
-    div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${titleIcon}</span>${p.name}${!p.isBot?' (YOU)':''}</div><div class="lb-trophies" style="color:#ffd700">🏅 ${p.medals.toLocaleString()}</div>`;
-    el.appendChild(div);
+    const isMe=!p.isBot;
+    el.appendChild(renderMedalRow(p,rank,isMe));
   });
 
   const playerInTop=top100.some(p=>!p.isBot);
   if(!playerInTop){
     const allSorted=[...P.medalsBots,{name:P.name,medals:P.medals||0,isBot:false}].sort((a,b)=>b.medals-a.medals);
     const playerRank=allSorted.findIndex(p=>!p.isBot)+1;
-    const div=document.createElement('div');
-    div.className='lb-row you';
-    div.style.marginTop='12px';
-    div.innerHTML=`<div class="lb-rank">#${playerRank}</div><div class="lb-name"><span style="opacity:0.7;margin-right:4px">${playerTitle.icon}</span>${P.name} (YOU)</div><div class="lb-trophies" style="color:#ffd700">🏅 ${(P.medals||0).toLocaleString()}</div>`;
-    el.appendChild(div);
+    const divider=document.createElement('div');
+    divider.className='lb-your-rank';
+    el.appendChild(divider);
+    el.appendChild(renderMedalRow({name:P.name,medals:P.medals||0},playerRank,true));
   }
 }
 
-function updateStats(){const a=getArena(P.tr);const totalBattles=P.wins+P.losses;const winRate=totalBattles>0?Math.round((P.wins/totalBattles)*100):0;const avgCrowns=totalBattles>0?Math.round(P.crowns/totalBattles*10)/10:0;const stats=[{i:'🏆',v:P.tr.toLocaleString(),l:'Trophies'},{i:'🏟️',v:a.name,l:'Arena'},{i:'✅',v:P.wins,l:'Wins'},{i:'❌',v:P.losses,l:'Losses'},{i:'👑',v:P.crowns,l:'Crowns'},{i:'🔥',v:P.maxStr,l:'Best Streak'},{i:'⚔️',v:totalBattles.toString(),l:'Total Battles'},{i:'📈',v:winRate+'%',l:'Win Rate'},{i:'🏅',v:avgCrowns,l:'Avg Crowns'},{i:'💰',v:P.gold.toLocaleString(),l:'Gold'},{i:'💎',v:P.gems.toLocaleString(),l:'Gems'},{i:'⭐',v:(P.starPoints||0).toLocaleString(),l:'Star Points'},{i:'🎴',v:P.unlocked.length+'/'+CARDS.length,l:'Cards'}];document.getElementById('statsGrid').innerHTML=stats.map(s=>`<div class="stat-card"><div class="stat-icon">${s.i}</div><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('');const starEl=document.getElementById('dispStarPoints');if(starEl)starEl.textContent=(P.starPoints||0).toLocaleString();}
+function updateStats(){const a=getArena(P.tr);const totalBattles=P.wins+P.losses;const winRate=totalBattles>0?Math.round((P.wins/totalBattles)*100):0;const avgCrowns=totalBattles>0?Math.round(P.crowns/totalBattles*10)/10:0;const stats=[{i:'🏆',v:P.tr.toLocaleString(),l:'Trophies'},{i:'🏟️',v:a.name,l:'Arena'},{i:'✅',v:P.wins,l:'Wins'},{i:'❌',v:P.losses,l:'Losses'},{i:'👑',v:P.crowns,l:'Crowns'},{i:'🔥',v:P.maxStr,l:'Best Streak'},{i:'⚔️',v:totalBattles.toString(),l:'Total Battles'},{i:'📈',v:winRate+'%',l:'Win Rate'},{i:'🏅',v:avgCrowns,l:'Avg Crowns'},{i:'💰',v:P.gold.toLocaleString(),l:'Gold'},{i:'💎',v:P.gems.toLocaleString(),l:'Gems'},{i:'⭐',v:(P.starPoints||0).toLocaleString(),l:'Star Points'},{i:'🎴',v:P.unlocked.length+'/'+CARDS.length,l:'Cards'},{i:'🏷️',v:(P.discount||0)+'%',l:'Discount'}];document.getElementById('statsGrid').innerHTML=stats.map(s=>`<div class="stat-card"><div class="stat-icon">${s.i}</div><div class="stat-value">${s.v}</div><div class="stat-label">${s.l}</div></div>`).join('');const starEl=document.getElementById('dispStarPoints');if(starEl)starEl.textContent=(P.starPoints||0).toLocaleString();}
 
 function updateArena(){const currentArena=getArena(P.tr);const currentIndex=ARENAS.indexOf(currentArena);let html='';ARENAS.forEach((a,i)=>{const isCurrent=i===currentIndex;const isAhead=i>currentIndex;html+=`<div class="arena-item${isCurrent?' current':''}${isAhead?' ahead':''}"><div class="arena-icon">${a.icon}</div><div class="arena-name">${a.name}</div><div class="arena-range">${a.min}-${a.max} trophies</div>${isAhead?`<div class="arena-req">Need ${a.min-P.tr} more trophies</div>`:''}</div>`;});document.getElementById('arenaList').innerHTML=html;}
 
@@ -1851,7 +1997,7 @@ async function sendResourcesToPlayer(){
   const resourceType=document.getElementById('sendResourceType').value;
   const amount=parseInt(document.getElementById('sendAmount').value)||0;
   if(amount<=0){showNotify('Enter a valid amount','error');return;}
-  const resourceNames={gold:'💰 Gold',gems:'💎 Gems',crystals:'🔮 Crystals',star_points:'⭐ Star Points'};
+  const resourceNames={gold:'💰 Gold',gems:'💎 Gems',crystals:'🔮 Crystals',star_points:'⭐ Star Points',cash:'💵 Cash'};
 
   // If admin targeting a player, add resources directly to them
   if(adminTargetPlayerId){
@@ -1869,7 +2015,7 @@ async function sendResourcesToPlayer(){
   // Otherwise transfer from self to recipient
   const recipient=document.getElementById('sendRecipient').value.trim();
   if(!recipient){showNotify('Enter recipient username','error');return;}
-  const myAmount=resourceType==='star_points'?P.starPoints:(P[resourceType]||0);
+  const myAmount=resourceType==='star_points'?P.starPoints:resourceType==='cash'?P.cashBalance:(P[resourceType]||0);
   if(myAmount<amount){showNotify(`Not enough ${resourceNames[resourceType]}! You have ${myAmount}`,'error');return;}
   try{
     const res=await fetch(`${SERVER_URL}/api/send-resources`,{
@@ -1879,7 +2025,7 @@ async function sendResourcesToPlayer(){
     });
     const data=await res.json();
     if(data.success){
-      if(resourceType==='star_points')P.starPoints-=amount;else P[resourceType]-=amount;
+      if(resourceType==='star_points')P.starPoints-=amount;else if(resourceType==='cash')P.cashBalance-=amount;else P[resourceType]-=amount;
       save();updateStats();updateShop();
       showNotify(data.message,'success');
       document.getElementById('sendRecipient').value='';
@@ -1914,7 +2060,7 @@ async function unlockAll(){
     if(await adminUpdatePlayer({unlocked:allCardIds}))showNotify(`🔓 Unlocked all cards for ${adminTargetPlayerData?.username}`,'success');
   }else{CARDS.forEach(c=>{if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);});save();updateCards();showNotify('🔓 All cards unlocked','success');}
 }
-function skipAllChests(){const toOpen=P.chests.map((c,i)=>c&&c.startTime?i:null).filter(i=>i!==null).reverse();toOpen.forEach(idx=>openChest(idx));updateChests();}
+function openAllReadyChests(){const toOpen=P.chests.map((c,i)=>c&&c.unlocking&&getChestTimeLeft(c)<=0?i:null).filter(i=>i!==null).reverse();toOpen.forEach(idx=>openChest(idx));updateChests();}
 async function unlockSingle(){
   const id=document.getElementById('unlockCardSelect').value;
   if(adminTargetPlayerId){
@@ -2111,7 +2257,8 @@ async function onTargetPlayerChange() {
     if (res.ok && data.player) {
       adminTargetPlayerData = data.player;
       info.style.display = 'block';
-      info.innerHTML = `Editing: <strong>${data.player.username}</strong> | 🏆${data.player.stats?.trophies || 0} | 💰${data.player.resources?.gold || 0} | 💎${data.player.resources?.gems || 0}`;
+      info.innerHTML = `Editing: <strong>${data.player.username}</strong> | 🏆${data.player.stats?.trophies || 0} | 💰${data.player.resources?.gold || 0} | 💎${data.player.resources?.gems || 0} | 🏷️${data.player.discount || 0}%`;
+      updateDiscountDisplay();
     } else {
       showNotify('Failed to load player data', 'error');
       select.value = '';
@@ -2143,7 +2290,8 @@ async function adminUpdatePlayer(updates) {
       adminTargetPlayerData = data.player;
       // Update info display
       const info = document.getElementById('targetPlayerInfo');
-      info.innerHTML = `Editing: <strong>${data.player.username}</strong> | 🏆${data.player.stats?.trophies || 0} | 💰${data.player.resources?.gold || 0} | 💎${data.player.resources?.gems || 0}`;
+      info.innerHTML = `Editing: <strong>${data.player.username}</strong> | 🏆${data.player.stats?.trophies || 0} | 💰${data.player.resources?.gold || 0} | 💎${data.player.resources?.gems || 0} | 🏷️${data.player.discount || 0}%`;
+      updateDiscountDisplay();
       return true;
     } else {
       showNotify(data.error || 'Failed to update player', 'error');
@@ -2512,7 +2660,7 @@ if(!B||!B.on||!B.activeChampion)return;
 const t=B.activeChampion;if(t.abilityUsed)return;
 t.abilityUsed=true;t.hitCount=10;triggerAbility(t);updateChampionAbilityButton();}
 function startLoop(){let last=performance.now();function loop(now){if(!B||!B.on)return;const dt=(now-last)/1000;last=now;B.time+=dt;const rem=Math.max(0,(B.duration||180)-B.time);document.getElementById('timer').textContent=fmt(rem);if(rem<=0){if(B.isMultiplayer){sendBattleEnd(B.crowns.me>B.crowns.ai);return;}else{endBattle(B.crowns.me>B.crowns.ai);return;}}const rate=B.time>=120?1.6:0.8;B.elixir=Math.min(10,B.elixir+dt*rate);if(!B.isMultiplayer)B.botElixir=Math.min(10,B.botElixir+dt*rate*0.85);document.getElementById('elixirFill').style.width=(B.elixir*10)+'%';document.getElementById('elixirText').textContent=Math.floor(B.elixir)+'/10';document.getElementById('doubleElixir').classList.toggle('on',B.time>=120);updateHand();updateTroops(dt);updateSpellEffects(dt);updateTroopPoisons(dt);updateGraveyardEffects(dt);towerAttacks(dt);if(!B.isMultiplayer)aiTurn();if(B.crowns.me>=3){if(B.isMultiplayer){sendBattleEnd(true);return;}else{endBattle(true);return;}}if(B.crowns.ai>=3){if(B.isMultiplayer){sendBattleEnd(false);return;}else{endBattle(false);return;}}B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
-function updateTroops(dt){const a=document.getElementById('arena');B.troops.forEach(t=>{if(t.hp<=0)return;if(t.stun>0){t.stun-=dt;return;}const target=findTarget(t);if(!target)return;const dx=target.x-t.x,dy=target.y-t.y,dist=Math.sqrt(dx*dx+dy*dy);if(t.card.charge&&!t.charge){t.chargeBuildup+=dt;if(t.chargeBuildup>=2)t.charge=1;}if(dist<=t.rng){t.cd-=dt;if(t.cd<=0){let dmg=t.dmg;if(t.charge){dmg*=2;t.charge=0;showDmg(t.x,t.y-12,'⚡CHARGE!','#f1c40f');}if(target.type==='tower'){t.lockedTower=target.key;B.towers[target.key].hp-=dmg;showDmg(target.x,target.y,'-'+dmg);updateTower(target.key);if(t.card.poison&&!B.towers[target.key].poisoned){B.towers[target.key].poisoned=true;B.troopPoisons.push({tower:target.key,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}else{if(t.card.spl){const sr=t.card.spl*16;B.troops.forEach(e=>{if(e.side!==t.side&&e.hp>0){const ed=Math.sqrt((e.x-target.x)**2+(e.y-target.y)**2);if(ed<sr){e.hp-=dmg;showDmg(e.x,e.y,'-'+dmg);if(t.card.poison&&!e.poisoned){e.poisoned=true;B.troopPoisons.push({target:e,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}});}else{target.hp-=dmg;showDmg(target.x,target.y,'-'+dmg);if(t.card.poison&&!target.poisoned){target.poisoned=true;B.troopPoisons.push({target,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}t.hitCount++;if(t.isSkeletonQueen&&t.hitCount%3===0){const skelC=getCard('skel');if(skelC){for(let qi=0;qi<3;qi++){const qang=(qi/3)*Math.PI*2;const qsx=t.x+Math.cos(qang)*25;const qsy=t.y+Math.sin(qang)*25;spawnTroop({...skelC,cnt:1},qsx,qsy,t.side,t.lane);}showDmg(t.x,t.y-12,'👸💀x3!','#9b59b6');}}if(t.card.ability&&t.hitCount>=10&&!t.abilityUsed){t.abilityUsed=true;triggerAbility(t);}const counter=t.el.querySelector('.hit-counter');if(counter)counter.textContent=t.hitCount;t.cd=t.as;}}else{let spd=t.charge?t.spd*2:t.spd;const pushDist=30;B.troops.forEach(p=>{if(p!==t&&p.side===t.side&&p.hp>0&&p.spd>t.spd){const px=p.x-t.x,py=p.y-t.y,pd=Math.sqrt(px*px+py*py);const behind=(t.side==='player'?py>0:py<0);const sameArea=Math.abs(px)<25;if(pd<pushDist&&behind&&sameArea){spd=Math.max(spd,p.spd*0.85);}}});t.x+=(dx/dist)*spd*38*dt;t.y+=(dy/dist)*spd*38*dt;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';}const bar=t.el.querySelector('.hp-fill');if(bar)bar.style.width=Math.max(0,(t.hp/t.maxHp)*100)+'%';});B.troops=B.troops.filter(t=>{if(t.hp<=0){const fx=document.createElement('div');fx.className='death-effect';fx.textContent=t.card.icon;fx.style.left=t.x+'px';fx.style.top=t.y+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),500);t.el.remove();return false;}return true;});}
+function updateTroops(dt){const a=document.getElementById('arena');B.troops.forEach(t=>{if(t.hp<=0)return;if(t.stun>0){t.stun-=dt;return;}const target=findTarget(t);if(!target)return;const dx=target.x-t.x,dy=target.y-t.y,dist=Math.sqrt(dx*dx+dy*dy);if(t.card.charge&&!t.charge){t.chargeBuildup+=dt;if(t.chargeBuildup>=2)t.charge=1;}if(dist<=t.rng){t.cd-=dt;if(t.cd<=0){let dmg=t.dmg;if(t.charge){dmg*=2;t.charge=0;showDmg(t.x,t.y-12,'⚡CHARGE!','#f1c40f');}if(target.type==='tower'){t.lockedTower=target.key;B.towers[target.key].hp-=dmg;showDmg(target.x,target.y,'-'+dmg);updateTower(target.key);if(t.card.poison&&!B.towers[target.key].poisoned){B.towers[target.key].poisoned=true;B.troopPoisons.push({tower:target.key,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}else{if(t.card.spl){const sr=t.card.spl*16;B.troops.forEach(e=>{if(e.side!==t.side&&e.hp>0){const ed=Math.sqrt((e.x-target.x)**2+(e.y-target.y)**2);if(ed<sr){e.hp-=dmg;showDmg(e.x,e.y,'-'+dmg);if(t.card.poison&&!e.poisoned){e.poisoned=true;B.troopPoisons.push({target:e,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}});}else{target.hp-=dmg;showDmg(target.x,target.y,'-'+dmg);if(t.card.poison&&!target.poisoned){target.poisoned=true;B.troopPoisons.push({target,dps:t.card.poison,remaining:t.card.poisonDur||4,tickTimer:0});}}}t.hitCount++;if(t.isSkeletonQueen&&t.hitCount%3===0){const skelC=getCard('skel');if(skelC){for(let qi=0;qi<3;qi++){const qang=(qi/3)*Math.PI*2;const qsx=t.x+Math.cos(qang)*25;const qsy=t.y+Math.sin(qang)*25;spawnTroop({...skelC,cnt:1},qsx,qsy,t.side,t.lane);}showDmg(t.x,t.y-12,'👸💀x3!','#9b59b6');}}if(t.card.ability&&t.hitCount>=10&&!t.abilityUsed){t.abilityUsed=true;triggerAbility(t);}const counter=t.el.querySelector('.hit-counter');if(counter)counter.textContent=t.hitCount;t.cd=t.as;}}else{let spd=t.charge?t.spd*2:t.spd;const pushDist=30;B.troops.forEach(p=>{if(p!==t&&p.side===t.side&&p.hp>0&&p.spd>t.spd){const px=p.x-t.x,py=p.y-t.y,pd=Math.sqrt(px*px+py*py);const behind=(t.side==='player'?py>0:py<0);const sameArea=Math.abs(px)<25;if(pd<pushDist&&behind&&sameArea){spd=Math.max(spd,p.spd*0.85);}}});t.x+=(dx/dist)*spd*38*dt;t.y+=(dy/dist)*spd*38*dt;t.el.style.left=t.x+'px';t.el.style.top=t.y+'px';}const bar=t.el.querySelector('.hp-fill');if(bar)bar.style.width=Math.max(0,(t.hp/t.maxHp)*100)+'%';});B.troops=B.troops.filter(t=>{if(t.hp<=0){const fx=document.createElement('div');fx.className='death-effect';fx.textContent=t.card.icon;fx.style.left=t.x+'px';fx.style.top=t.y+'px';a.appendChild(fx);setTimeout(()=>fx.remove(),500);t.el.remove();if(t.isBoss&&typeof defeatBoss==='function'){defeatBoss();}return false;}return true;});}
 function findTarget(t){const enemy=t.side==='player'?'ai':'player',tKeys=enemy==='ai'?['aL','aR','aK']:['pL','pR','pK'];let best=null,bestD=120;
 // If troop has locked onto a tower (already hit it once), keep targeting it
 if(t.lockedTower&&!B.towers[t.lockedTower].dead)return{type:'tower',key:t.lockedTower,x:B.towers[t.lockedTower].x,y:B.towers[t.lockedTower].y};
@@ -2635,7 +2783,7 @@ B.botElixir-=bestCard.cost;
 B.botHand[B.botHand.indexOf(bestCard)]=B.botNext;
 B.botNext=B.botQueue.shift()||B.botCards[Math.floor(Math.random()*B.botCards.length)];
 }
-function closeResult(){document.querySelectorAll('.result-overlay').forEach(el=>el.remove());document.getElementById('battle').classList.remove('on');try{if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});}catch(e){}goTab('Play');}
+function closeResult(){document.querySelectorAll('.result-overlay').forEach(el=>el.remove());document.getElementById('battle').classList.remove('on');try{if(document.exitFullscreen)document.exitFullscreen().catch(()=>{});}catch(e){}draftDeck=[];draftPicks=[];currentGameMode='normal';goTab('Play');}
 function rematch(){document.querySelectorAll('.result-overlay').forEach(el=>el.remove());document.getElementById('battle').classList.remove('on');startBattle();}
 // Battle mode selector overlay
 function showBattleModeSelector(){
@@ -2665,7 +2813,61 @@ function initCompLeaderboard(){if(!P.compBots||P.compBots.length===0){P.compBots
 initCompLeaderboard();
 function updateCompBots(){P.compBots.forEach(bot=>{if(Math.random()<0.4){bot.wins+=Math.floor(Math.random()*3)+1;}});P.compLastUpdate=Date.now();save();}
 setInterval(()=>{updateCompBots();updateCompetitive();},2000);
-function updateCompetitive(){const lb=[...P.compBots,{name:P.name,wins:P.compWins,isBot:false}];lb.sort((a,b)=>b.wins-a.wins);const top100=lb.slice(0,100);const el=document.getElementById('compLbList');if(!el)return;el.innerHTML='';top100.forEach((p,i)=>{const rank=i+1,div=document.createElement('div');div.className='lb-row'+(!p.isBot?' you':'')+(rank<=3?' top3':'');div.innerHTML=`<div class="lb-rank">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div><div class="lb-name">${p.name}${!p.isBot?' (YOU)':''}</div><div class="lb-trophies" style="color:#ff0080">🔥 ${p.wins} WINS</div>`;el.appendChild(div);});const playerInTop=top100.some(p=>!p.isBot);if(!playerInTop){const allSorted=lb.sort((a,b)=>b.wins-a.wins);const playerRank=allSorted.findIndex(p=>!p.isBot)+1;const div=document.createElement('div');div.className='lb-row you';div.style.marginTop='12px';div.innerHTML=`<div class="lb-rank">#${playerRank}</div><div class="lb-name">${P.name} (YOU)</div><div class="lb-trophies" style="color:#ff0080">🔥 ${P.compWins} WINS</div>`;el.appendChild(div);}}
+function updateCompetitive(){
+  const avatarColors=['#ff0080','#e91e63','#9c27b0','#673ab7','#ff4081','#f50057','#d500f9','#651fff','#ff1744','#c51162'];
+  const getAvatarColor=(name)=>avatarColors[name.charCodeAt(0)%avatarColors.length];
+  const getInitials=(name)=>name.slice(0,2).toUpperCase();
+  const getCompRank=(wins)=>{
+    if(wins>=500)return'🌟 Legend';
+    if(wins>=200)return'👑 Champion';
+    if(wins>=100)return'🏆 Master';
+    if(wins>=50)return'💎 Diamond';
+    if(wins>=25)return'🥇 Platinum';
+    if(wins>=10)return'🥈 Gold';
+    return'🥉 Silver';
+  };
+  const renderCompRow=(p,rank,isMe)=>{
+    const div=document.createElement('div');
+    const rankClass=rank<=3?` rank-${rank} top3`:'';
+    div.className='lb-row'+(isMe?' you':'')+rankClass;
+    if(rank===1)div.style.background='linear-gradient(145deg,rgba(255,0,128,0.4),rgba(204,0,102,0.3))';
+    else if(rank===2)div.style.background='linear-gradient(145deg,rgba(233,30,99,0.3),rgba(156,39,176,0.2))';
+    else if(rank===3)div.style.background='linear-gradient(145deg,rgba(156,39,176,0.3),rgba(103,58,183,0.2))';
+    const initial=getInitials(p.name);
+    const color=getAvatarColor(p.name);
+    const compRank=getCompRank(p.wins);
+    div.innerHTML=`
+      <div class="lb-rank"><div class="lb-rank-badge" style="${rank<=3?'background:linear-gradient(145deg,#ff0080,#cc0066);color:#fff':''}">${rank<=3?['🥇','🥈','🥉'][rank-1]:rank}</div></div>
+      <div class="lb-avatar" style="background:linear-gradient(145deg,${color},${color}dd)">${initial}</div>
+      <div class="lb-info">
+        <div class="lb-name">${p.name}${isMe?' <span style="opacity:0.7;font-size:10px">(YOU)</span>':''}</div>
+        <div class="lb-subtitle">${compRank}</div>
+      </div>
+      <div class="lb-trophies" style="background:rgba(255,0,128,0.15);color:#ff0080">🔥 ${p.wins}</div>
+    `;
+    return div;
+  };
+  const lb=[...P.compBots,{name:P.name,wins:P.compWins,isBot:false}];
+  lb.sort((a,b)=>b.wins-a.wins);
+  const top100=lb.slice(0,100);
+  const el=document.getElementById('compLbList');
+  if(!el)return;
+  el.innerHTML='<div class="lb-header"><span>RANK</span><span>PLAYER</span><span>WINS</span></div>';
+  top100.forEach((p,i)=>{
+    const rank=i+1;
+    const isMe=!p.isBot;
+    el.appendChild(renderCompRow(p,rank,isMe));
+  });
+  const playerInTop=top100.some(p=>!p.isBot);
+  if(!playerInTop){
+    const allSorted=lb.sort((a,b)=>b.wins-a.wins);
+    const playerRank=allSorted.findIndex(p=>!p.isBot)+1;
+    const divider=document.createElement('div');
+    divider.className='lb-your-rank';
+    el.appendChild(divider);
+    el.appendChild(renderCompRow({name:P.name,wins:P.compWins},playerRank,true));
+  }
+}
 function goTab(t){document.querySelectorAll('.tab').forEach(el=>el.classList.remove('on'));document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('on'));document.getElementById('tab'+t).classList.add('on');const idx=['Play','Cards','Chests','Shop','Road','Leaderboard','Stats','Arena'].indexOf(t);if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('on');if(t==='Play')updatePlay();if(t==='Cards')updateCards(),updateKingTowerUI(),updatePrincessUI();if(t==='Chests')updateChests();if(t==='Shop')updateShop();if(t==='Road')updateRoad();if(t==='Leaderboard'){updateLeaderboard();updateCompetitive();}if(t==='Stats')updateStats();if(t==='Arena')updateArena();}
 function updatePlay(){const a=getArena(P.tr);document.getElementById('dispTr').textContent=P.tr.toLocaleString();document.getElementById('dispArena').textContent=a.icon+' '+a.name;document.getElementById('dispW').textContent=P.wins;document.getElementById('dispL').textContent=P.losses;document.getElementById('dispC').textContent=P.crowns;document.getElementById('dispStreak').textContent=P.streak||0;document.getElementById('dispCompTr').textContent=P.compTrophies||0;document.getElementById('dispCompW').textContent=P.compWins||0;document.getElementById('dispCompL').textContent=P.compLosses||0;const btn=document.getElementById('battleBtn'),badge=document.getElementById('rankedBadge');if(isRanked()){btn.className='battle-btn ranked';btn.innerHTML='🔥 RANKED BATTLE!';badge.style.display='inline-block';}else{btn.className='battle-btn';btn.innerHTML='⚔️ BATTLE!';badge.style.display='none';}}
 
@@ -2977,36 +3179,36 @@ const WILD_ITEMS=[
 {id:'w_infinity',name:'Infinity Stone',icon:'♾️',desc:'All wild effects doubled',effect:'2x Wild Effects',rarity:'legendary',chance:0.01}
 ];
 
-// DAILY REWARDS
+// DAILY REWARDS (gems are VERY rare - mostly gold/crystals)
 const DAILY_REWARDS=[
 {day:1,icon:'💰',amount:'500',type:'gold',reward:{gold:500}},
-{day:2,icon:'💎',amount:'25',type:'gems',reward:{gems:25}},
+{day:2,icon:'💠',amount:'30',type:'crystals',reward:{crystals:30}},
 {day:3,icon:'📦',amount:'1',type:'chest',reward:{chest:'silver'}},
 {day:4,icon:'💰',amount:'1000',type:'gold',reward:{gold:1000}},
 {day:5,icon:'💠',amount:'50',type:'crystals',reward:{crystals:50}},
 {day:6,icon:'🎁',amount:'1',type:'chest',reward:{chest:'gold'}},
-{day:7,icon:'👑',amount:'MEGA',type:'mega',reward:{gold:5000,gems:100,crystals:100,chest:'magic'}}
+{day:7,icon:'👑',amount:'MEGA',type:'mega',reward:{gold:5000,gems:5,crystals:100,chest:'magic'}}
 ];
 
-// DAILY CHALLENGES
+// DAILY CHALLENGES (no gem rewards - gold/crystals only)
 const CHALLENGES=[
 {id:'ch_wins',name:'Win 3 Battles',icon:'⚔️',target:3,reward:{gold:500}},
-{id:'ch_crowns',name:'Earn 5 Crowns',icon:'👑',target:5,reward:{gems:20}},
+{id:'ch_crowns',name:'Earn 5 Crowns',icon:'👑',target:5,reward:{crystals:25}},
 {id:'ch_troops',name:'Deploy 20 Troops',icon:'🎴',target:20,reward:{gold:300}},
 {id:'ch_damage',name:'Deal 5000 Damage',icon:'💥',target:5000,reward:{crystals:30}}
 ];
 
-// ACHIEVEMENTS
+// ACHIEVEMENTS (gems are VERY hard to get - reduced by 90%)
 const ACHIEVEMENTS=[
-{id:'ach_first',name:'First Victory',desc:'Win your first battle',icon:'🏆',check:()=>P.wins>=1,reward:{gems:50}},
-{id:'ach_10wins',name:'Warrior',desc:'Win 10 battles',icon:'⚔️',check:()=>P.wins>=10,reward:{gems:100}},
-{id:'ach_100wins',name:'Champion',desc:'Win 100 battles',icon:'🏅',check:()=>P.wins>=100,reward:{gems:500}},
-{id:'ach_1000tr',name:'Rising Star',desc:'Reach 1000 trophies',icon:'⭐',check:()=>P.tr>=1000,reward:{gems:100}},
-{id:'ach_5000tr',name:'Arena Master',desc:'Reach 5000 trophies',icon:'🌟',check:()=>P.tr>=5000,reward:{gems:250}},
-{id:'ach_streak5',name:'Hot Streak',desc:'Win 5 battles in a row',icon:'🔥',check:()=>P.maxStr>=5,reward:{gems:75}},
-{id:'ach_allcards',name:'Collector',desc:'Unlock all cards',icon:'🎴',check:()=>P.unlocked.length>=CARDS.length,reward:{gems:1000}},
-{id:'ach_wild5',name:'Wild Hunter',desc:'Collect 5 wild items',icon:'🌀',check:()=>(P.wildItems||[]).length>=5,reward:{gems:150}},
-{id:'ach_rich',name:'Gold Hoarder',desc:'Have 100,000 gold',icon:'💰',check:()=>P.gold>=100000,reward:{gems:200}}
+{id:'ach_first',name:'First Victory',desc:'Win your first battle',icon:'🏆',check:()=>P.wins>=1,reward:{gems:5}},
+{id:'ach_10wins',name:'Warrior',desc:'Win 10 battles',icon:'⚔️',check:()=>P.wins>=10,reward:{gems:10}},
+{id:'ach_100wins',name:'Champion',desc:'Win 100 battles',icon:'🏅',check:()=>P.wins>=100,reward:{gems:50}},
+{id:'ach_1000tr',name:'Rising Star',desc:'Reach 1000 trophies',icon:'⭐',check:()=>P.tr>=1000,reward:{gems:10}},
+{id:'ach_5000tr',name:'Arena Master',desc:'Reach 5000 trophies',icon:'🌟',check:()=>P.tr>=5000,reward:{gems:25}},
+{id:'ach_streak5',name:'Hot Streak',desc:'Win 5 battles in a row',icon:'🔥',check:()=>P.maxStr>=5,reward:{gems:8}},
+{id:'ach_allcards',name:'Collector',desc:'Unlock all cards',icon:'🎴',check:()=>P.unlocked.length>=CARDS.length,reward:{gems:100}},
+{id:'ach_wild5',name:'Wild Hunter',desc:'Collect 5 wild items',icon:'🌀',check:()=>(P.wildItems||[]).length>=5,reward:{gems:15}},
+{id:'ach_rich',name:'Gold Hoarder',desc:'Have 100,000 gold',icon:'💰',check:()=>P.gold>=100000,reward:{gems:20}}
 ];
 
 // Initialize player wild/daily data
@@ -3418,7 +3620,7 @@ div.innerHTML=`<div class="day-num">DAY ${dayNum}</div><div class="day-icon">${d
 dailyGrid.appendChild(div);});
 const claimBtn=document.getElementById('dailyClaimBtn');
 claimBtn.innerHTML=canClaim?`<button onclick="claimDaily()" style="padding:12px 24px;background:linear-gradient(180deg,var(--gold),var(--gold-dark));border:none;border-radius:10px;color:#fff;font-weight:900;font-size:14px;cursor:pointer">🎁 CLAIM DAY ${currentDay} REWARD!</button>`:`<div style="color:#6b7c8a;font-size:12px">Come back tomorrow for Day ${currentDay<7?currentDay+1:1}!</div>`;
-updateChallenges();updateAchievements();updateDailyNotif();
+updateChallenges();updateAchievements();updateDailyNotif();updateHighDemandUI();
 }
 
 // Claim daily reward
@@ -3430,6 +3632,58 @@ if(reward.chest){const ct=CHEST_TYPES.find(t=>t.id===reward.chest);addChest(ct);
 P.dailyStreak=(P.dailyStreak||0)+1;P.lastDaily=today;save();
 showNotify(`Day ${dayIdx+1} Claimed!\n${reward.gold?'+'+reward.gold+' Gold ':''}${reward.gems?'+'+reward.gems+' Gems ':''}${reward.crystals?'+'+reward.crystals+' Crystals ':''}`,'success','📅');
 updateDaily();updateShop();updateChests();
+}
+
+// ===== HIGH DEMAND HIGH REWARD SYSTEM =====
+// Get 5,000 trophies in a single day to earn $100 cash shop balance
+const HIGH_DEMAND_TARGET=5000;
+const HIGH_DEMAND_REWARD=100;
+
+function checkHighDemandReset(){
+const today=new Date().toDateString();
+if(!P.highDemandProgress)P.highDemandProgress={lastReset:null,trophiesStart:0,claimed:false};
+if(P.highDemandProgress.lastReset!==today){
+  P.highDemandProgress={lastReset:today,trophiesStart:P.tr,claimed:false};
+  save();
+}
+}
+
+function getHighDemandProgress(){
+checkHighDemandReset();
+return Math.max(0,P.tr-P.highDemandProgress.trophiesStart);
+}
+
+function claimHighDemandReward(){
+if(P.highDemandProgress.claimed)return;
+const progress=getHighDemandProgress();
+if(progress<HIGH_DEMAND_TARGET)return;
+P.highDemandProgress.claimed=true;
+P.cashBalance=(P.cashBalance||0)+HIGH_DEMAND_REWARD;
+save();
+showNotify(`🔥 HIGH DEMAND REWARD!\n+$${HIGH_DEMAND_REWARD} Cash Balance!`,'epic');
+updateHighDemandUI();
+updateCashShop();
+}
+
+function updateHighDemandUI(){
+checkHighDemandReset();
+const container=document.getElementById('highDemandContainer');
+if(!container)return;
+const progress=getHighDemandProgress();
+const pct=Math.min(100,Math.floor((progress/HIGH_DEMAND_TARGET)*100));
+const canClaim=progress>=HIGH_DEMAND_TARGET&&!P.highDemandProgress.claimed;
+const claimed=P.highDemandProgress.claimed;
+container.innerHTML=`
+<div style="background:linear-gradient(145deg,${claimed?'#1a5a1a':'#5a1a1a'},${claimed?'#0d3d0d':'#3d0d0d'});border:2px solid ${claimed?'#2ecc71':canClaim?'#ffd700':'#ff4757'};border-radius:12px;padding:15px;text-align:center">
+  <div style="font-size:11px;color:${claimed?'#2ecc71':'#ff4757'};font-weight:900;margin-bottom:8px">🔥 HIGH DEMAND CHALLENGE</div>
+  <div style="font-size:18px;font-weight:900;color:#fff;margin-bottom:5px">${progress.toLocaleString()} / ${HIGH_DEMAND_TARGET.toLocaleString()}</div>
+  <div style="font-size:10px;color:#888;margin-bottom:8px">Trophies Gained Today</div>
+  <div style="background:rgba(0,0,0,0.3);border-radius:10px;height:12px;overflow:hidden;margin-bottom:10px">
+    <div style="width:${pct}%;height:100%;background:linear-gradient(90deg,${claimed?'#2ecc71':'#ff4757'},${claimed?'#27ae60':'#e74c3c'});border-radius:10px;transition:width 0.3s"></div>
+  </div>
+  <div style="font-size:12px;color:#ffd700;font-weight:800;margin-bottom:8px">REWARD: 💵 $${HIGH_DEMAND_REWARD} Cash Balance</div>
+  ${claimed?'<div style="color:#2ecc71;font-weight:900">✅ CLAIMED!</div>':canClaim?`<button onclick="claimHighDemandReward()" style="padding:10px 25px;background:linear-gradient(180deg,#ffd700,#f39c12);border:none;border-radius:8px;color:#000;font-weight:900;cursor:pointer">🎁 CLAIM REWARD!</button>`:`<div style="font-size:9px;color:#888">Win battles to gain trophies!</div>`}
+</div>`;
 }
 
 // Update challenges
@@ -3584,8 +3838,9 @@ const duration=B.isCustom?(cm.infiniteTime?99999:(cm.duration||180)):180;
 const rem=B.isTest?999:Math.max(0,duration-B.time);
 document.getElementById('timer').textContent=(B.isTest||(B.isCustom&&cm.infiniteTime))?'∞':fmt(rem);
 if(rem<=0&&!B.isTest&&!(B.isCustom&&cm.infiniteTime)){
-  if(B.isMultiplayer){sendBattleEnd(B.crowns.me>B.crowns.ai);return;}
-  else{endBattle(B.crowns.me>B.crowns.ai);return;}
+  if(B.isMultiplayer){
+    // Server handles timeout, don't end locally - wait for battle_result
+  }else{endBattle(B.crowns.me>B.crowns.ai);return;}
 }
 // Calculate elixir rate based on mode
 let rate=B.time>=60?1.6:0.8;
@@ -3617,13 +3872,18 @@ if(B.gameMode==='chaos'||(B.isCustom&&cm.chaosEvents))applyChaosModifiers();
 // Apply custom mode special effects
 if(B.isCustom)applyCustomModeModifiers(dt);
 // Check for 3-crown victory immediately after tower updates
+// For multiplayer, only send tower damage - server decides when battle ends
 if(B.crowns.me>=3){
-  if(B.isMultiplayer){sendBattleEnd(true);return;}
-  else{endBattle(true);return;}
+  if(B.isMultiplayer){
+    // Just report the kill, server will send battle_result
+    NET.send('tower_damage',{battle_id:B.battleId,target:'king',damage:9999,target_player:B.myRole==='player1'?'player2':'player1'});
+  }else{endBattle(true);return;}
 }
 if(B.crowns.ai>=3){
-  if(B.isMultiplayer){sendBattleEnd(false);return;}
-  else{endBattle(false);return;}
+  if(B.isMultiplayer){
+    // Just report our king died, server will send battle_result
+    NET.send('tower_damage',{battle_id:B.battleId,target:'king',damage:9999,target_player:B.myRole});
+  }else{endBattle(false);return;}
 }
 B.loop=requestAnimationFrame(loop);}B.loop=requestAnimationFrame(loop);}
 
@@ -4670,14 +4930,15 @@ async function setClanMinTrophies(){
 }
 
 // ===== ENHANCED PASS ROYALE =====
-const SEASON_THEMES=[
+// SEASON_THEMES and CURRENT_SEASON defined in config.js module
+var SEASON_THEMES = window.SEASON_THEMES || [
 {name:'ROYAL DAWN',icon:'🌅',color:'#ff8c00'},
 {name:'FROZEN CONQUEST',icon:'❄️',color:'#00bcd4'},
 {name:'DRAGON FURY',icon:'🐉',color:'#e74c3c'},
 {name:'SHADOW REALM',icon:'🌑',color:'#9b59b6'},
 {name:'GOLDEN AGE',icon:'👑',color:'#ffd700'}
 ];
-const CURRENT_SEASON=SEASON_THEMES[Math.floor(Date.now()/2592000000)%SEASON_THEMES.length];
+var CURRENT_SEASON = window.CURRENT_SEASON || SEASON_THEMES[Math.floor(Date.now()/2592000000)%SEASON_THEMES.length];
 
 // 90 Tier Battle Pass Rewards
 const BP_TIERS=[
@@ -5273,26 +5534,33 @@ return`<div class="weekly-quest"><div style="display:flex;align-items:center;gap
 }
 
 // ===== SOUND EFFECTS =====
-const SOUNDS={
+// SOUNDS, playTone, playSound defined in audio.js module
+var SOUNDS = window.GameAudio?.SOUNDS || {
 click:()=>playTone(800,50),
 spawn:()=>playTone(400,100),
 hit:()=>playTone(200,50),
 victory:()=>{playTone(523,150);setTimeout(()=>playTone(659,150),150);setTimeout(()=>playTone(784,300),300);},
 defeat:()=>{playTone(400,200);setTimeout(()=>playTone(300,200),200);setTimeout(()=>playTone(200,400),400);}
 };
-let audioCtx=null;
-function playTone(freq,dur){
-if(!P.soundOn)return;
-if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
-const osc=audioCtx.createOscillator();
-const gain=audioCtx.createGain();
-osc.connect(gain);gain.connect(audioCtx.destination);
-osc.frequency.value=freq;
-gain.gain.setValueAtTime(0.1,audioCtx.currentTime);
-gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+dur/1000);
-osc.start();osc.stop(audioCtx.currentTime+dur/1000);
+var audioCtx = null;
+if (!window.playTone) {
+  window.playTone = function(freq,dur){
+    if(typeof P !== 'undefined' && !P.soundOn)return;
+    if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+    const osc=audioCtx.createOscillator();
+    const gain=audioCtx.createGain();
+    osc.connect(gain);gain.connect(audioCtx.destination);
+    osc.frequency.value=freq;
+    gain.gain.setValueAtTime(0.1,audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.01,audioCtx.currentTime+dur/1000);
+    osc.start();osc.stop(audioCtx.currentTime+dur/1000);
+  };
 }
-function playSound(name){if(SOUNDS[name])SOUNDS[name]();}
+var playTone = window.playTone;
+if (!window.playSound) {
+  window.playSound = function(name){if(SOUNDS[name])SOUNDS[name]();};
+}
+var playSound = window.playSound;
 
 // ===== VICTORY CELEBRATION =====
 function showVictoryCelebration(){
@@ -5337,24 +5605,30 @@ document.getElementById('partnerName').textContent=B.partner.name;
 // ===== DRAFT MODE =====
 let draftPool=[];
 let draftPicks=[];
+let draftDeck=[]; // Temporary deck for draft battle only
 let draftInProgress=false;
 function startDraftMode(){
 // Shuffle using Fisher-Yates for reliable randomization
+// Include both troops and spells for a balanced draft
 const troops=CARDS.filter(c=>c.type==='troop');
+const spells=CARDS.filter(c=>c.type==='spell');
 for(let i=troops.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[troops[i],troops[j]]=[troops[j],troops[i]];}
-draftPool=troops.slice(0,16);
+for(let i=spells.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[spells[i],spells[j]]=[spells[j],spells[i]];}
+// Take 12 troops and 4 spells for 16 card pool
+draftPool=[...troops.slice(0,12),...spells.slice(0,4)];
+// Shuffle the combined pool
+for(let i=draftPool.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[draftPool[i],draftPool[j]]=[draftPool[j],draftPool[i]];}
 draftPicks=[];
 draftInProgress=true;
 showDraftModal();
 }
 function showDraftModal(){
 if(draftPicks.length>=8){
-// Draft complete - set up deck and start battle
-P.deck=[...draftPicks];
-save();
+// Draft complete - use these cards for this battle only (not saved)
+draftDeck=[...draftPicks]; // Store draft deck separately for battle
+showNotify(`🎴 Draft Complete!\nUsing drafted deck for this battle only!`,'info');
 document.querySelectorAll('.draft-modal').forEach(m=>m.remove());
 draftInProgress=false;
-currentGameMode='normal';
 // Small delay to ensure DOM is ready
 setTimeout(()=>{startBattle();},100);
 return;
@@ -5704,6 +5978,8 @@ isSpinning=false;
 btn.classList.remove('spinning');
 P.lastSpinTime=Date.now();
 P.totalSpins=(P.totalSpins||0)+1;
+save(); // Immediately save spin time to persist across refreshes
+console.log('Spin completed. New lastSpinTime:',P.lastSpinTime);
 // Give rewards
 if(reward.gold)P.gold+=reward.gold;
 if(reward.gems)P.gems+=reward.gems;
@@ -5757,11 +6033,15 @@ timerEl.style.display='none';
 }
 }
 
-// Update spin timer every second
+// Update spin timer every second (starts immediately and persists across server restarts)
 setInterval(updateSpinWheel,1000);
+// Also update immediately on load
+setTimeout(updateSpinWheel,100);
 
 // Initialize spin data
 if(!P.totalSpins)P.totalSpins=0;
+// Debug: log spin timer status on load
+console.log('Spin timer loaded. lastSpinTime:',P.lastSpinTime,'canSpin:',canSpin(),'timeLeft:',getSpinTimeLeft());
 
 // ===== UPDATE START BATTLE =====
 const oldStartBattle=startBattle;
@@ -5805,7 +6085,8 @@ if(isCustomMode){
   startElixir=cm.startFull?(cm.maxElixir||10):(cm.startElixir||5);
   if(cm.infiniteElixir)startElixir=cm.maxElixir||10;
 }
-B={on:true,elixir:startElixir,botElixir:5,hand:[],queue:[...P.deck].sort(()=>0.5-Math.random()),next:null,sel:-1,troops:[],towers:{pL:{hp:basePrincessHP,max:basePrincessHP,dead:0},pR:{hp:basePrincessHP,max:basePrincessHP,dead:0},pK:{hp:baseKingHP,max:baseKingHP,dead:0},aL:{hp:aiPrincessHP,max:aiPrincessHP,dead:0},aR:{hp:aiPrincessHP,max:aiPrincessHP,dead:0},aK:{hp:aiKingHP,max:aiKingHP,dead:0}},tCD:{pL:0,pR:0,pK:0,aL:0,aR:0,aK:0},kingOn:{p:0,a:0},crowns:{me:0,ai:0},time:0,arena,botLvl,botMult,botCards,botHand:[],botQueue:[...botCards],loop:null,gameMode:currentGameMode,is2v2:currentGameMode==='2v2',isTest:isTestMode,isCustom:isCustomMode,customMode:cm,spellEffects:[],troopPoisons:[],elixirPumps:[],buildings:[],opponentName,opponentTrophies};
+const battleDeck=(currentGameMode==='draft'&&draftDeck.length===8)?draftDeck:P.deck;
+B={on:true,elixir:startElixir,botElixir:5,hand:[],queue:[...battleDeck].sort(()=>0.5-Math.random()),next:null,sel:-1,troops:[],towers:{pL:{hp:basePrincessHP,max:basePrincessHP,dead:0},pR:{hp:basePrincessHP,max:basePrincessHP,dead:0},pK:{hp:baseKingHP,max:baseKingHP,dead:0},aL:{hp:aiPrincessHP,max:aiPrincessHP,dead:0},aR:{hp:aiPrincessHP,max:aiPrincessHP,dead:0},aK:{hp:aiKingHP,max:aiKingHP,dead:0}},tCD:{pL:0,pR:0,pK:0,aL:0,aR:0,aK:0},kingOn:{p:0,a:0},crowns:{me:0,ai:0},time:0,arena,botLvl,botMult,botCards,botHand:[],botQueue:[...botCards],loop:null,gameMode:currentGameMode,is2v2:currentGameMode==='2v2',isTest:isTestMode,isCustom:isCustomMode,customMode:cm,spellEffects:[],troopPoisons:[],elixirPumps:[],buildings:[],opponentName,opponentTrophies};
 for(let i=0;i<4;i++)B.hand.push(B.queue.shift());
 B.next=B.queue.shift();
 for(let i=0;i<4;i++)B.botHand.push(B.botQueue.shift());
@@ -6858,16 +7139,16 @@ function updateMetaDeckSelect(){
   select.innerHTML=META_DECKS.map((d,i)=>`<option value="${i}">${d.custom?'★ ':''}${d.name} (${d.tier})</option>`).join('');
 }
 
-// ===== FEATURE 5: BOSS BATTLE MODE =====
+// ===== FEATURE 5: BOSS BATTLE MODE (Nerfed - easier to beat) =====
 const BOSSES=[
-  {id:'goblin_king',name:'Goblin King',icon:'👺',hp:50000,damage:500,reward:{gold:5000,gems:100,tokens:50},desc:'The ruler of all goblins',difficulty:'Easy'},
-  {id:'mega_knight',name:'Mega Knight',icon:'🦸',hp:80000,damage:800,reward:{gold:8000,gems:150,tokens:75},desc:'The armored destroyer',difficulty:'Medium'},
-  {id:'dragon_lord',name:'Dragon Lord',icon:'🐉',hp:120000,damage:1200,reward:{gold:15000,gems:250,tokens:100},desc:'Ancient fire breather',difficulty:'Hard'},
-  {id:'skeleton_emperor',name:'Skeleton Emperor',icon:'💀',hp:100000,damage:1000,reward:{gold:12000,gems:200,tokens:85},desc:'Lord of the undead',difficulty:'Hard'},
-  {id:'pekka_prime',name:'P.E.K.K.A Prime',icon:'🤖',hp:150000,damage:1500,reward:{gold:20000,gems:350,tokens:150},desc:'Ultimate war machine',difficulty:'Extreme'},
-  {id:'royal_giant_king',name:'Royal Giant King',icon:'👑',hp:200000,damage:2000,reward:{gold:30000,gems:500,tokens:200},desc:'The siege master',difficulty:'Extreme'},
-  {id:'inferno_dragon',name:'Inferno Dragon',icon:'🔥',hp:90000,damage:2500,reward:{gold:10000,gems:180,tokens:90},desc:'Melts everything',difficulty:'Medium'},
-  {id:'electro_wizard_boss',name:'Electro Overlord',icon:'⚡',hp:175000,damage:1800,reward:{gold:25000,gems:400,tokens:175},desc:'Master of lightning',difficulty:'Extreme'}
+  {id:'goblin_king',name:'Goblin King',icon:'👺',hp:15000,damage:150,reward:{gold:5000,gems:10,tokens:50},desc:'The ruler of all goblins',difficulty:'Easy'},
+  {id:'mega_knight',name:'Mega Knight',icon:'🦸',hp:25000,damage:250,reward:{gold:8000,gems:15,tokens:75},desc:'The armored destroyer',difficulty:'Medium'},
+  {id:'dragon_lord',name:'Dragon Lord',icon:'🐉',hp:40000,damage:400,reward:{gold:15000,gems:25,tokens:100},desc:'Ancient fire breather',difficulty:'Hard'},
+  {id:'skeleton_emperor',name:'Skeleton Emperor',icon:'💀',hp:35000,damage:350,reward:{gold:12000,gems:20,tokens:85},desc:'Lord of the undead',difficulty:'Hard'},
+  {id:'pekka_prime',name:'P.E.K.K.A Prime',icon:'🤖',hp:50000,damage:500,reward:{gold:20000,gems:35,tokens:150},desc:'Ultimate war machine',difficulty:'Extreme'},
+  {id:'royal_giant_king',name:'Royal Giant King',icon:'👑',hp:65000,damage:600,reward:{gold:30000,gems:50,tokens:200},desc:'The siege master',difficulty:'Extreme'},
+  {id:'inferno_dragon',name:'Inferno Dragon',icon:'🔥',hp:30000,damage:700,reward:{gold:10000,gems:18,tokens:90},desc:'Melts everything',difficulty:'Medium'},
+  {id:'electro_wizard_boss',name:'Electro Overlord',icon:'⚡',hp:55000,damage:550,reward:{gold:25000,gems:40,tokens:175},desc:'Master of lightning',difficulty:'Extreme'}
 ];
 
 let currentBoss=null;
@@ -6905,7 +7186,7 @@ function updateBossMode(){
       <div class="boss-hp-bar">
         <div class="boss-hp-fill" style="width:${hpPercent}%"></div>
       </div>
-      <div style="font-size:12px;font-weight:900;color:#ff4757">HP: ${currentBoss.hp.toLocaleString()} | DMG: ${currentBoss.damage.toLocaleString()}</div>
+      <div style="font-size:12px;font-weight:900;color:#ff4757">HP: ${bossHP.toLocaleString()}/${bossMaxHP.toLocaleString()} | DMG: ${currentBoss.damage.toLocaleString()}</div>
       <div style="margin-top:15px;display:flex;gap:10px;justify-content:center">
         <button onclick="startBossBattle()" style="padding:12px 25px;background:linear-gradient(180deg,#ff4757,#c0392b);border:none;border-radius:10px;color:#fff;font-weight:900;cursor:pointer;font-size:14px">⚔️ FIGHT BOSS!</button>
       </div>
@@ -7258,10 +7539,29 @@ const CASH_SHOP_ITEMS=[
 // === SPECIAL (5 items) ===
 {id:'special_1',name:'Name Change',icon:'✏️',desc:'Change your name',price:2.99,category:'special',reward:{nameChange:true}},
 {id:'special_2',name:'Unlock All Cards',icon:'🎴',desc:'Unlock every card!',price:49.99,category:'special',reward:{unlockAllCards:true},featured:true},
-{id:'special_3',name:'Max All Cards',icon:'⬆️',desc:'Max all card levels!',price:99.99,category:'special',reward:{maxAllCards:true},featured:true},
+{id:'special_3',name:'Max 2 Cards',icon:'⬆️',desc:'Pick 2 cards to max level!',price:29.99,category:'special',reward:{max2Cards:true},featured:true},
 {id:'special_4',name:'Trophy Reset',icon:'🔄',desc:'Reset trophies to 0',price:0.99,category:'special',reward:{trophyReset:true}},
 {id:'special_5',name:'Everything Pack',icon:'♾️',desc:'Unlock EVERYTHING!',price:499.99,category:'special',reward:{everything:true},featured:true},
-{id:'special_6',name:'Unlimited Levels',icon:'🚀',desc:'Pick 1 card - no level cap! Buy again to remove.',price:14.99,category:'special',reward:{unlimitedLevelsPick:true},featured:true}
+{id:'special_6',name:'Unlimited Levels',icon:'🚀',desc:'Pick 1 card - no level cap! Buy again to remove.',price:14.99,category:'special',reward:{unlimitedLevelsPick:true},featured:true},
+{id:'final_chest',name:'THE FINAL CHEST',icon:'🌟',desc:'ULTIMATE! 500k gold, 10k gems, 1k crystals, ALL cards, 50k stars!',price:5000.00,category:'special',reward:{finalChest:true},featured:true},
+// === SALE ITEMS (Limited Time!) ===
+{id:'sale_1',name:'💥 GEM SALE 50% OFF!',icon:'💎',desc:'500 Gems (Was $4.99)',price:2.49,category:'sale',reward:{gems:500},featured:true,sale:true},
+{id:'sale_2',name:'💥 MEGA GEM SALE!',icon:'💎',desc:'1500 Gems (Was $14.99)',price:7.49,category:'sale',reward:{gems:1500},featured:true,sale:true},
+{id:'sale_3',name:'💥 ULTRA GEM DEAL!',icon:'💎',desc:'5000 Gems (Was $49.99)',price:24.99,category:'sale',reward:{gems:5000},featured:true,sale:true},
+{id:'sale_4',name:'⚡ FLASH GEM SALE',icon:'💎',desc:'200 Gems - 60% OFF!',price:0.99,category:'sale',reward:{gems:200},featured:true,sale:true},
+{id:'sale_5',name:'🔥 HOT GEM BUNDLE',icon:'💎',desc:'3000 Gems + 100k Gold',price:19.99,category:'sale',reward:{gems:3000,gold:100000},featured:true,sale:true},
+// === CARD SHARDS (Cash only) ===
+{id:'shard_common_10',name:'Common Shards x10',icon:'🤍',desc:'10 random common shards',price:0.99,category:'shards',reward:{shards:{rarity:'common',amount:10}}},
+{id:'shard_common_50',name:'Common Shards x50',icon:'🤍',desc:'50 random common shards',price:3.99,category:'shards',reward:{shards:{rarity:'common',amount:50}}},
+{id:'shard_rare_10',name:'Rare Shards x10',icon:'🧡',desc:'10 random rare shards',price:1.99,category:'shards',reward:{shards:{rarity:'rare',amount:10}}},
+{id:'shard_rare_50',name:'Rare Shards x50',icon:'🧡',desc:'50 random rare shards',price:7.99,category:'shards',reward:{shards:{rarity:'rare',amount:50}}},
+{id:'shard_epic_10',name:'Epic Shards x10',icon:'💜',desc:'10 random epic shards',price:4.99,category:'shards',reward:{shards:{rarity:'epic',amount:10}}},
+{id:'shard_epic_50',name:'Epic Shards x50',icon:'💜',desc:'50 random epic shards',price:19.99,category:'shards',reward:{shards:{rarity:'epic',amount:50}},featured:true},
+{id:'shard_leg_5',name:'Legendary Shards x5',icon:'❤️',desc:'5 random legendary shards',price:9.99,category:'shards',reward:{shards:{rarity:'legendary',amount:5}},featured:true},
+{id:'shard_leg_20',name:'Legendary Shards x20',icon:'❤️',desc:'20 random legendary shards',price:34.99,category:'shards',reward:{shards:{rarity:'legendary',amount:20}},featured:true},
+{id:'shard_champ_3',name:'Champion Shards x3',icon:'💙',desc:'3 random champion shards',price:14.99,category:'shards',reward:{shards:{rarity:'champion',amount:3}},featured:true},
+{id:'shard_champ_10',name:'Champion Shards x10',icon:'💙',desc:'10 random champion shards',price:44.99,category:'shards',reward:{shards:{rarity:'champion',amount:10}},featured:true},
+{id:'shard_any_100',name:'Random Shards x100',icon:'🎴',desc:'100 random shards (any rarity)',price:29.99,category:'shards',reward:{shards:{rarity:'random',amount:100}},featured:true}
 ];
 
 let cashShopFilter='all';
@@ -7273,21 +7573,61 @@ function setCashBalance(){
   showNotify('💵 Balance Set!\n$'+P.cashBalance.toFixed(2),'success');
 }
 
+async function setPlayerDiscount(){
+  const val=Math.max(0,Math.min(100,parseInt(document.getElementById('admDiscount').value)||0));
+  if(adminTargetPlayerId){
+    if(await adminUpdatePlayer({discount:val})){
+      showNotify(`🏷️ Set ${adminTargetPlayerData?.username}'s discount to ${val}%`,'success');
+      updateDiscountDisplay();
+    }
+  }else{
+    P.discount=val;
+    save();
+    updateCashShop();
+    updateDiscountDisplay();
+    showNotify(`🏷️ Your discount set to ${val}%`,'success');
+  }
+}
+
+function updateDiscountDisplay(){
+  const el=document.getElementById('currentDiscount');
+  if(el){
+    if(adminTargetPlayerId&&adminTargetPlayerData){
+      el.textContent=(adminTargetPlayerData.discount||0)+'%';
+    }else{
+      el.textContent=(P.discount||0)+'%';
+    }
+  }
+}
+
 function updateCashShop(){
   const grid=document.getElementById('cashShopGrid');
   const display=document.getElementById('cashBalanceDisplay');
   if(display)display.textContent=(P.cashBalance||0).toFixed(2);
   if(!grid)return;
 
-  const items=cashShopFilter==='all'?CASH_SHOP_ITEMS:CASH_SHOP_ITEMS.filter(i=>i.category===cashShopFilter);
-  grid.innerHTML=items.map(item=>`
-    <div class="cash-item${item.featured?' featured':''}" onclick="buyCashItem('${item.id}')">
+  const discount=(P.discount||0)/100;
+  let items=cashShopFilter==='all'?CASH_SHOP_ITEMS:CASH_SHOP_ITEMS.filter(i=>i.category===cashShopFilter);
+  // Filter out one-time items that were already purchased
+  items=items.filter(item=>{
+    if(item.reward.unlockAllCards&&P.hasUnlockAllCards)return false;
+    if(item.reward.passRoyale&&P.bpPremium)return false;
+    return true;
+  });
+  grid.innerHTML=items.map(item=>{
+    const finalPrice=item.price*(1-discount);
+    const priceHtml=discount>0?
+      `<span style="text-decoration:line-through;color:#888;font-size:10px">$${item.price.toFixed(2)}</span> <span style="color:#2ecc71">$${finalPrice.toFixed(2)}</span>`:
+      `$${item.price.toFixed(2)}`;
+    return `
+    <div class="cash-item${item.featured?' featured':''}${item.sale?' sale':''}${discount>0?' discounted':''}" onclick="buyCashItem('${item.id}')">
       <div class="item-icon">${item.icon}</div>
       <div class="item-name">${item.name}</div>
       <div class="item-desc">${item.desc}</div>
-      <div class="item-price">$${item.price.toFixed(2)}</div>
+      <div class="item-price">${priceHtml}</div>
+      ${discount>0?`<div style="position:absolute;top:4px;right:4px;background:#e74c3c;color:#fff;padding:2px 6px;border-radius:8px;font-size:8px;font-weight:bold">-${Math.round(discount*100)}%</div>`:''}
     </div>
-  `).join('');
+  `;}).join('');
 }
 
 function filterCashShop(category){
@@ -7302,12 +7642,14 @@ function filterCashShop(category){
 function buyCashItem(itemId){
   const item=CASH_SHOP_ITEMS.find(i=>i.id===itemId);
   if(!item)return;
-  if((P.cashBalance||0)<item.price){
-    showNotify('Not enough balance!\nNeed $'+item.price.toFixed(2),'error','💵');
+  const discount=(P.discount||0)/100;
+  const finalPrice=item.price*(1-discount);
+  if((P.cashBalance||0)<finalPrice){
+    showNotify('Not enough balance!\nNeed $'+finalPrice.toFixed(2),'error','💵');
     return;
   }
 
-  P.cashBalance-=item.price;
+  P.cashBalance-=finalPrice;
   P.cashPurchases.push({id:item.id,date:Date.now()});
 
   // Apply rewards
@@ -7335,8 +7677,8 @@ function buyCashItem(itemId){
     if(added<r.chestMulti.count)showNotify(`Added ${added}/${r.chestMulti.count} chests (slots full)`,'warning','📦');
   }
   if(r.passRoyale)P.bpPremium=true;
-  if(r.unlockAllCards)CARDS.forEach(c=>{if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);});
-  if(r.maxAllCards)CARDS.forEach(c=>{P.lvls[c.id]=15;});
+  if(r.unlockAllCards){CARDS.forEach(c=>{if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);});P.hasUnlockAllCards=true;}
+  if(r.max2Cards){showMax2CardsPicker();save();updateCashShop();playSound('click');return;}
   if(r.towerSkin&&!P.ownedTowerSkins.includes(r.towerSkin))P.ownedTowerSkins.push(r.towerSkin);
   if(r.unlimitedLevelsPick){
     // If already has unlimited card, remove it
@@ -7349,6 +7691,22 @@ function buyCashItem(itemId){
     }
     save();updateCashShop();updateCards();
     playSound('click');
+    return;
+  }
+  if(r.finalChest){
+    // THE FINAL CHEST - Ultimate rewards!
+    P.gold=(P.gold||0)+500000;
+    P.gems=(P.gems||0)+10000;
+    P.crystals=(P.crystals||0)+1000;
+    P.starPoints=(P.starPoints||0)+50000;
+    // Unlock ALL cards
+    CARDS.forEach(c=>{
+      if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);
+      P.shards[c.id]=(P.shards[c.id]||0)+100; // 100 shards each
+    });
+    save();updateCashShop();updateCards();updateStats();updateShop();
+    showNotify(`🌟 THE FINAL CHEST OPENED!\n500k Gold, 10k Gems, 1k Crystals\nALL CARDS UNLOCKED + 100 shards each!`,'epic');
+    playSound('victory');
     return;
   }
 
@@ -7393,6 +7751,78 @@ function selectUnlimitedCard(cardId){
   updateCards();
   showNotify(`🚀 ${c.icon} ${c.name}\nNow has UNLIMITED LEVELS!`,'epic');
   playSound('victory');
+}
+
+let max2PickedCards=[];
+function showMax2CardsPicker(){
+  max2PickedCards=[];
+  const modal=document.createElement('div');
+  modal.id='max2PickerModal';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:1000;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div style="background:linear-gradient(145deg,#1b2838,#0d1b2a);border:3px solid #f39c12;border-radius:15px;padding:20px;max-width:350px;max-height:80vh;overflow-y:auto">
+      <div style="text-align:center;font-size:16px;font-weight:900;color:#f39c12;margin-bottom:10px">⬆️ PICK 2 CARDS TO MAX</div>
+      <div id="max2PickCount" style="text-align:center;font-size:12px;color:#fff;margin-bottom:15px">Selected: 0/2</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px">
+        ${P.unlocked.map(id=>{const c=getCard(id);return`<div class="max2-card" id="max2card_${id}" onclick="toggleMax2Card('${id}')" style="background:#2a3f54;border:2px solid #1e3a5f;border-radius:8px;padding:8px;text-align:center;cursor:pointer;transition:all 0.2s"><div style="font-size:20px">${c.icon}</div><div style="font-size:8px;color:#8fa3b3;margin-top:2px">${c.name}</div><div style="font-size:8px;color:#aaa">Lv.${P.lvls[id]||1}</div></div>`;}).join('')}
+      </div>
+      <button id="max2ConfirmBtn" onclick="confirmMax2Cards()" disabled style="width:100%;margin-top:15px;padding:12px;background:#555;border:none;border-radius:8px;color:#fff;font-weight:800;cursor:not-allowed;font-size:14px">Select 2 Cards</button>
+      <button onclick="cancelMax2Picker()" style="width:100%;margin-top:8px;padding:10px;background:#e74c3c;border:none;border-radius:8px;color:#fff;font-weight:800;cursor:pointer">Cancel (Refund)</button>
+    </div>
+  `;
+  document.body.appendChild(modal);
+}
+
+function toggleMax2Card(cardId){
+  const idx=max2PickedCards.indexOf(cardId);
+  const el=document.getElementById('max2card_'+cardId);
+  if(idx>=0){
+    max2PickedCards.splice(idx,1);
+    el.style.border='2px solid #1e3a5f';
+    el.style.background='#2a3f54';
+  }else if(max2PickedCards.length<2){
+    max2PickedCards.push(cardId);
+    el.style.border='2px solid #f39c12';
+    el.style.background='#3a5f54';
+  }
+  document.getElementById('max2PickCount').textContent='Selected: '+max2PickedCards.length+'/2';
+  const btn=document.getElementById('max2ConfirmBtn');
+  if(max2PickedCards.length===2){
+    btn.disabled=false;
+    btn.style.background='linear-gradient(180deg,#f39c12,#e67e22)';
+    btn.style.cursor='pointer';
+    btn.textContent='⬆️ MAX THESE 2 CARDS!';
+  }else{
+    btn.disabled=true;
+    btn.style.background='#555';
+    btn.style.cursor='not-allowed';
+    btn.textContent='Select 2 Cards';
+  }
+}
+
+function confirmMax2Cards(){
+  if(max2PickedCards.length!==2)return;
+  max2PickedCards.forEach(id=>{P.lvls[id]=15;});
+  const names=max2PickedCards.map(id=>getCard(id).icon+' '+getCard(id).name).join(' & ');
+  save();
+  document.getElementById('max2PickerModal').remove();
+  updateCards();
+  showNotify(`⬆️ MAXED!\n${names}\nNow Level 15!`,'epic');
+  playSound('victory');
+}
+
+function cancelMax2Picker(){
+  // Refund the purchase
+  const item=CASH_SHOP_ITEMS.find(i=>i.id==='special_3');
+  if(item){
+    const discount=(P.discount||0)/100;
+    const finalPrice=item.price*(1-discount);
+    P.cashBalance+=finalPrice;
+    save();
+    showNotify('💵 Refunded $'+finalPrice.toFixed(2),'info');
+  }
+  document.getElementById('max2PickerModal').remove();
+  updateCashShop();
 }
 
 // Initialize everything

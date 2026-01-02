@@ -173,18 +173,9 @@ const SEASON_THEMES = [
   {name:'Spooky Season',icon:'🎃',color:'#9c27b0'},
   {name:'Winter Wonder',icon:'⛄',color:'#2196f3'}
 ];
-const CURRENT_SEASON = SEASON_THEMES[Math.floor(Date.now()/2592000000)%SEASON_THEMES.length];
+var CURRENT_SEASON = SEASON_THEMES[Math.floor(Date.now()/2592000000)%SEASON_THEMES.length];
 
-// Sound Effects
-const SOUNDS = {
-  click:()=>playTone(800,50),
-  deploy:()=>playTone(400,100),
-  damage:()=>playTone(200,80),
-  win:()=>{playTone(523,150);setTimeout(()=>playTone(659,150),150);setTimeout(()=>playTone(784,200),300);},
-  lose:()=>{playTone(392,200);setTimeout(()=>playTone(330,200),200);setTimeout(()=>playTone(262,300),400);},
-  upgrade:()=>{playTone(600,100);setTimeout(()=>playTone(800,100),100);setTimeout(()=>playTone(1000,150),200);},
-  chest:()=>{playTone(500,100);setTimeout(()=>playTone(700,100),150);setTimeout(()=>playTone(900,150),300);}
-};
+// Sound Effects - defined in audio.js module
 
 // Export to global scope for non-module usage
 window.GameConfig = {

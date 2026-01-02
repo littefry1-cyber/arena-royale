@@ -265,7 +265,7 @@ async def send_resources(request: web.Request) -> web.Response:
     if not resource_type:
         return web.json_response({'error': 'Resource type required'}, status=400)
 
-    valid_resources = ['gold', 'gems', 'crystals', 'star_points']
+    valid_resources = ['gold', 'gems', 'crystals', 'star_points', 'cash']
     if resource_type not in valid_resources:
         return web.json_response({'error': f'Invalid resource. Valid: {valid_resources}'}, status=400)
 
