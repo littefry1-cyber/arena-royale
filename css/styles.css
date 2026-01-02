@@ -41,8 +41,8 @@
         .lb-name{font-size:13px}
         .lb-trophies{font-size:13px}
         .modal-box{max-width:400px;padding:20px}
-        #arena{width:min(95vw,600px);height:min(85vh,900px)}
-        #hand{height:64px;gap:10px}
+        #arena{width:min(95vw,600px);height:min(70vh,750px)}
+        #hand{height:80px;gap:10px}
         .hand-card{width:60px;height:64px}
         .hand-card .icon{font-size:22px}
         .hand-card .name{font-size:6px}
@@ -70,8 +70,8 @@
         .shop-items{grid-template-columns:repeat(4,1fr);gap:15px}
         .shop-item{padding:20px}
         .shop-item .item-icon{font-size:42px}
-        #arena{width:min(90vw,700px);height:min(90vh,1000px)}
-        #hand{height:72px;gap:12px}
+        #arena{width:min(90vw,700px);height:min(70vh,800px)}
+        #hand{height:85px;gap:12px}
         .hand-card{width:68px;height:72px}
         .hand-card .icon{font-size:26px}
         .starshop-grid{grid-template-columns:repeat(4,1fr)}
@@ -345,8 +345,8 @@
     .crown-display.red{color:var(--red)}
     .crown-display.blue{color:var(--blue)}
     .battle-timer{font-family:'Lilita One',cursive;font-size:20px;color:var(--gold)}
-    .arena-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;overflow:hidden}
-    #arena{width:min(95vw,500px);height:min(80vh,800px);background:linear-gradient(180deg,#8B4513 0%,#228B22 10%,#228B22 38%,#4169E1 45%,#4169E1 55%,#228B22 62%,#228B22 90%,#8B4513 100%);border:4px solid var(--gold);border-radius:12px;position:relative;overflow:hidden;touch-action:none}
+    .arena-wrap{flex:1;display:flex;align-items:center;justify-content:center;padding:10px;padding-bottom:120px;overflow:visible}
+    #arena{width:min(95vw,500px);height:min(65vh,650px);background:linear-gradient(180deg,#8B4513 0%,#228B22 10%,#228B22 38%,#4169E1 45%,#4169E1 55%,#228B22 62%,#228B22 90%,#8B4513 100%);border:4px solid var(--gold);border-radius:12px;position:relative;overflow:visible;touch-action:none}
     .river{position:absolute;left:0;right:0;top:48%;height:4%;background:linear-gradient(90deg,#1e90ff,#4169e1,#1e90ff)}
     .bridge{position:absolute;top:46%;width:40px;height:8%;background:linear-gradient(180deg,#8B4513,#654321);border:2px solid #4a3728;z-index:5}
     .tower{position:absolute;display:flex;flex-direction:column;align-items:center;font-size:28px;z-index:10}
@@ -358,26 +358,26 @@
     .tower.dead{opacity:0.3;filter:grayscale(1)}
     .snowflake{position:absolute;color:#fff;font-size:12px;opacity:0.8;pointer-events:none;z-index:100;text-shadow:0 0 3px #fff,0 0 6px #b3e5fc;animation:snowfall linear infinite}
     @keyframes snowfall{0%{transform:translateY(-20px) rotate(0deg)}100%{transform:translateY(520px) rotate(360deg)}}
-    #spawnZone{position:absolute;left:0;right:0;bottom:18%;height:30%;background:transparent;z-index:15;pointer-events:none;border:2px dashed transparent;transition:all 0.3s}
+    #spawnZone{position:absolute;left:0;right:0;bottom:5%;height:42%;background:transparent;z-index:15;pointer-events:none;border:2px dashed transparent;transition:all 0.3s}
     #spawnZone.ready{pointer-events:auto!important;background:rgba(46,204,113,0.2);border-color:rgba(46,204,113,0.8);cursor:crosshair}
     .pocket-zone{position:absolute;top:0;height:48%;width:48%;background:transparent;z-index:15;pointer-events:none;border:2px dashed transparent;transition:all 0.3s;display:none}
     .pocket-zone.unlocked{display:block}
     .pocket-zone.ready{pointer-events:auto!important;background:rgba(231,76,60,0.25);border-color:rgba(231,76,60,0.8);cursor:crosshair}
     #pocketLeft{left:0;border-radius:0 0 10px 0}
     #pocketRight{right:0;border-radius:0 0 0 10px}
-    #elixirBar{position:absolute;bottom:12%;left:8px;right:8px;height:24px;background:#1a1a2e;border:2px solid #4a4a6a;border-radius:8px;overflow:hidden}
+    #elixirBar{position:absolute;bottom:-6%;left:8px;right:8px;height:28px;background:#1a1a2e;border:2px solid #4a4a6a;border-radius:8px;overflow:hidden}
     #elixirFill{height:100%;background:linear-gradient(90deg,#9b59b6,#8e44ad);transition:width 0.1s}
     #elixirText{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:10px}
     .double-elixir{position:absolute;right:3px;top:50%;transform:translateY(-50%);background:var(--gold);color:#000;font-size:8px;font-weight:900;padding:1px 4px;border-radius:5px;display:none}
     .double-elixir.on{display:block}
-    #hand{position:absolute;bottom:1%;left:10px;right:60px;height:10%;min-height:60px;max-height:80px;display:flex;gap:12px;justify-content:center;align-items:center;z-index:20}
+    #hand{position:absolute;bottom:-22%;left:10px;right:60px;height:80px;display:flex;gap:12px;justify-content:center;align-items:center;z-index:20}
     .hand-card{width:65px;height:72px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;cursor:pointer;box-shadow:0 3px 8px rgba(0,0,0,0.5);transition:transform 0.15s}
     .hand-card.selected{transform:translateY(-8px) scale(1.05);box-shadow:0 0 10px var(--green);border:2px solid var(--green)!important}
     .hand-card.disabled{filter:grayscale(0.7) brightness(0.6)}
     .hand-card .cost{position:absolute;top:-4px;left:-4px;width:18px;height:18px;background:linear-gradient(135deg,#9b59b6,#8e44ad);border:2px solid #fff;border-radius:50%;font-size:10px;font-weight:900;display:flex;align-items:center;justify-content:center}
     .hand-card .icon{font-size:24px}
     .hand-card .name{font-size:7px;font-weight:800}
-    #nextCard{position:absolute;bottom:2%;right:8px;width:50px;height:60px;background:linear-gradient(145deg,#2c3e50,#1a252f);border:2px solid #4a6278;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20}
+    #nextCard{position:absolute;bottom:-20%;right:8px;width:50px;height:70px;background:linear-gradient(145deg,#2c3e50,#1a252f);border:2px solid #4a6278;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:20}
     #nextCard .lbl{font-size:7px;color:#6b7c8a;font-weight:800}
     #nextCard .icon{font-size:20px}
         .troop{position:absolute;display:flex;flex-direction:column;align-items:center;transform:translate(-50%,-50%);z-index:25;transition:left 0.05s linear,top 0.05s linear;pointer-events:none}
