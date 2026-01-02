@@ -7,10 +7,10 @@ echo.
 cd /d "%~dp0"
 
 REM Check if virtual environment exists
-if not exist "venv\Scripts\activate.bat" (
+if not exist ".venv\Scripts\activate.bat" (
     echo Virtual environment not found!
     echo Creating virtual environment...
-    python -m venv venv
+    py -m venv .venv
     if errorlevel 1 (
         echo Failed to create virtual environment.
         pause
@@ -20,7 +20,7 @@ if not exist "venv\Scripts\activate.bat" (
 
 REM Activate virtual environment
 echo Activating virtual environment...
-call venv\Scripts\activate.bat
+call .venv\Scripts\activate.bat
 
 REM Install/update requirements
 echo Checking dependencies...
