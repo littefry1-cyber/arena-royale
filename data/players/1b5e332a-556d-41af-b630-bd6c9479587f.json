@@ -4,19 +4,19 @@
   "password_hash": "$2b$12$5QUc3/ac9UFoYAEIn/Z9Q.GgzyHguvBdSIO7Lgic/JEW1VnBHj6M6",
   "is_guest": false,
   "created_at": 1767331045.209069,
-  "updated_at": 1767333134.225494,
-  "last_login": 1767331045.209069,
+  "updated_at": 1767389788.861279,
+  "last_login": 1767384069.122305,
   "profile": {
     "name": "erik2",
     "title": "rookie",
     "tower_skin": "default"
   },
   "stats": {
-    "trophies": 150,
+    "trophies": 205,
     "elo": 1000,
-    "wins": 1,
-    "losses": 0,
-    "crowns": 3,
+    "wins": 3,
+    "losses": 7,
+    "crowns": 11,
     "max_streak": 1,
     "current_streak": 0,
     "medals": 0,
@@ -44,20 +44,66 @@
       "arrows",
       "minion",
       "giant",
-      "zap"
+      "zap",
+      "evo_pekka",
+      "prince",
+      "tornado",
+      "witch",
+      "fb",
+      "snowball",
+      "graveyard",
+      "nightwitch",
+      "evo_prince",
+      "cosmicdragon",
+      "wiz",
+      "blademaster",
+      "dragonslayer",
+      "spiritshaman",
+      "princess"
     ],
-    "levels": {},
+    "levels": {
+      "evo_pekka": 1,
+      "prince": 1,
+      "tornado": 1,
+      "witch": 1,
+      "fb": 1,
+      "snowball": 1,
+      "graveyard": 1,
+      "nightwitch": 1,
+      "evo_prince": 1,
+      "cosmicdragon": 1,
+      "wiz": 1,
+      "blademaster": 1,
+      "dragonslayer": 1,
+      "spiritshaman": 1,
+      "princess": 1
+    },
     "shards": {
-      "tornado": 12,
+      "tornado": 22,
       "bats": 14,
       "lightning": 7,
       "shieldmaiden": 7,
-      "spiritshaman": 6,
+      "spiritshaman": 11,
       "voidspider": 9,
-      "blademaster": 5,
+      "blademaster": 10,
       "infernolord": 5,
       "bloodbaron": 14,
-      "shadowdragon": 14
+      "shadowdragon": 14,
+      "evo_pekka": 5,
+      "prince": 5,
+      "witch": 10,
+      "fb": 17,
+      "snowball": 5,
+      "graveyard": 5,
+      "nightwitch": 5,
+      "evo_prince": 5,
+      "cosmicdragon": 5,
+      "wiz": 5,
+      "dragonslayer": 5,
+      "princess": 5,
+      "arrows": 32,
+      "minion": 10,
+      "zap": 12
     }
   },
   "decks": [
@@ -76,7 +122,7 @@
     [],
     []
   ],
-  "current_deck": 0,
+  "current_deck": -1,
   "clan_id": "57e8a1fe-f645-4f44-bc26-9f4542346593",
   "chests": [
     null,
@@ -93,5 +139,6 @@
   "trophy_road": {
     "claimed": []
   },
-  "battle_log": []
+  "battle_log": [],
+  "gold": 50
 }

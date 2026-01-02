@@ -5,7 +5,7 @@
   "is_guest": false,
   "admin": false,
   "created_at": 1767288151.104624,
-  "updated_at": 1767300829.914704,
+  "updated_at": 1767378206.098552,
   "last_login": 1767298534.027667,
   "profile": {
     "name": "alali276",
@@ -83,5 +83,5 @@
   },
   "battle_log": [],
   "gold": 10,
-  "banned": false
+  "banned": true
 }

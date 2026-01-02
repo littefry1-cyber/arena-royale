@@ -5,15 +5,15 @@
   "is_guest": false,
   "admin": false,
   "created_at": 1767291771.729209,
-  "updated_at": 1767297169.940839,
-  "last_login": 1767297138.809336,
+  "updated_at": 1767389836.889748,
+  "last_login": 1767389553.855769,
   "profile": {
     "name": "testacct2",
     "title": "rookie",
     "tower_skin": "default"
   },
   "stats": {
-    "trophies": 114221,
+    "trophies": 1,
     "elo": 1000,
     "wins": 0,
     "losses": 0,
@@ -28,7 +28,7 @@
     "comp_losses": 0,
     "comp_trophies": 0
   },
-  "banned": true,
+  "banned": false,
   "resources": {
     "gold": 4535,
     "gems": 31231,
@@ -82,5 +82,6 @@
   "trophy_road": {
     "claimed": []
   },
-  "battle_log": []
+  "battle_log": [],
+  "discount": 99
 }

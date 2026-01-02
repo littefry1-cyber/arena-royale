@@ -33,7 +33,8 @@
     "gold": 3,
     "gems": 6,
     "crystals": 2,
-    "star_points": 30
+    "star_points": 30,
+    "cash": 0
   },
   "cards": {
     "unlocked": [

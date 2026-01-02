@@ -7650,6 +7650,7 @@ function buyCashItem(itemId){
   }
 
   P.cashBalance-=finalPrice;
+  if(!P.cashPurchases)P.cashPurchases=[];
   P.cashPurchases.push({id:item.id,date:Date.now()});
 
   // Apply rewards
@@ -7694,19 +7695,27 @@ function buyCashItem(itemId){
     return;
   }
   if(r.finalChest){
-    // THE FINAL CHEST - Ultimate rewards!
-    P.gold=(P.gold||0)+500000;
-    P.gems=(P.gems||0)+10000;
-    P.crystals=(P.crystals||0)+1000;
-    P.starPoints=(P.starPoints||0)+50000;
-    // Unlock ALL cards
-    CARDS.forEach(c=>{
-      if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);
-      P.shards[c.id]=(P.shards[c.id]||0)+100; // 100 shards each
-    });
-    save();updateCashShop();updateCards();updateStats();updateShop();
-    showNotify(`🌟 THE FINAL CHEST OPENED!\n500k Gold, 10k Gems, 1k Crystals\nALL CARDS UNLOCKED + 100 shards each!`,'epic');
-    playSound('victory');
+    try{
+      // THE FINAL CHEST - Ultimate rewards!
+      P.gold=(P.gold||0)+500000;
+      P.gems=(P.gems||0)+10000;
+      P.crystals=(P.crystals||0)+1000;
+      P.starPoints=(P.starPoints||0)+50000;
+      // Unlock ALL cards
+      if(!P.unlocked)P.unlocked=[];
+      if(!P.shards)P.shards={};
+      if(CARDS&&CARDS.length>0){
+        CARDS.forEach(c=>{
+          if(c&&c.id){
+            if(!P.unlocked.includes(c.id))P.unlocked.push(c.id);
+            P.shards[c.id]=(P.shards[c.id]||0)+100;
+          }
+        });
+      }
+      save();updateCashShop();updateCards();updateStats();updateShop();
+      showNotify(`🌟 THE FINAL CHEST OPENED!\n500k Gold, 10k Gems, 1k Crystals, 50k Stars\nALL CARDS UNLOCKED + 100 shards each!`,'epic');
+      playSound('victory');
+    }catch(e){console.error('Final Chest error:',e);showNotify('Error opening chest!','error');}
     return;
   }
 

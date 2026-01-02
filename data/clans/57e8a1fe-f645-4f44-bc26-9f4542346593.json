@@ -6,7 +6,7 @@
   "type": "open",
   "required_trophies": 0,
   "created_at": 1767329003.200633,
-  "updated_at": 1767333338.123443,
+  "updated_at": 1767384284.018163,
   "stats": {
     "war_wins": 0,
     "war_trophies": 0,
@@ -16,7 +16,7 @@
     {
       "player_id": "8ec0ce37-a947-4add-9e27-37e85f03effd",
       "name": "deleted",
-      "role": "co-leader",
+      "role": "elder",
       "joined_at": 1767329003.200633,
       "donations": 0,
       "last_active": 1767329003.200633
@@ -28,6 +28,14 @@
       "joined_at": 1767331570.741168,
       "donations": 0,
       "last_active": 1767331570.741168
+    },
+    {
+      "player_id": "59df97e4-7f05-47cc-8276-32a615228df2",
+      "name": "jobit",
+      "role": "co-leader",
+      "joined_at": 1767384137.0261502,
+      "donations": 0,
+      "last_active": 1767384137.0261505
     }
   ],
   "chat_history": [
@@ -60,6 +68,30 @@
       "sender_name": "erik2",
       "message": "Hi",
       "timestamp": 1767333033.4910545
+    },
+    {
+      "sender_id": "59df97e4-7f05-47cc-8276-32a615228df2",
+      "sender_name": "jobit",
+      "message": "yo",
+      "timestamp": 1767384140.734423
+    },
+    {
+      "sender_id": "1b5e332a-556d-41af-b630-bd6c9479587f",
+      "sender_name": "erik2",
+      "message": "hey i made you co-leader",
+      "timestamp": 1767384160.920132
+    },
+    {
+      "sender_id": "59df97e4-7f05-47cc-8276-32a615228df2",
+      "sender_name": "jobit",
+      "message": "thanks!",
+      "timestamp": 1767384216.202638
+    },
+    {
+      "sender_id": "59df97e4-7f05-47cc-8276-32a615228df2",
+      "sender_name": "jobit",
+      "message": "1v1",
+      "timestamp": 1767384284.0181596
     }
   ],
   "donation_requests": [],
