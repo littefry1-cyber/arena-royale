@@ -372,6 +372,9 @@ async def donate_cards(request: web.Request) -> web.Response:
             m['donations'] = m.get('donations', 0) + amount
             break
 
+    # Ensure stats exists
+    if 'stats' not in clan:
+        clan['stats'] = {}
     clan['stats']['total_donations'] = clan['stats'].get('total_donations', 0) + amount
 
     # Remove completed requests
@@ -446,3 +449,90 @@ async def request_cards(request: web.Request) -> web.Response:
     await db.save_clan(clan)
 
     return web.json_response({'request': new_request})
+
+
+@routes.post('/api/clan/{clan_id}/settings')
+async def update_clan_settings(request: web.Request) -> web.Response:
+    """Update clan settings (leader/co-leader only)"""
+    player_id = get_player_id_from_request(request)
+    if not player_id:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+
+    clan_id = request.match_info['clan_id']
+    clan = await db.get_clan(clan_id)
+    if not clan:
+        return web.json_response({'error': 'Clan not found'}, status=404)
+
+    # Check if player is leader or co-leader
+    player_member = None
+    for m in clan.get('members', []):
+        if m.get('player_id') == player_id:
+            player_member = m
+            break
+
+    if not player_member or player_member.get('role') not in ['leader', 'co-leader']:
+        return web.json_response({'error': 'Insufficient permissions'}, status=403)
+
+    try:
+        data = await request.json()
+    except:
+        return web.json_response({'error': 'Invalid JSON'}, status=400)
+
+    # Update allowed fields
+    if 'description' in data:
+        clan['description'] = str(data['description'])[:500]
+    if 'badge' in data:
+        clan['badge'] = str(data['badge'])[:4]  # emoji
+    if 'type' in data and data['type'] in ['open', 'invite_only', 'closed']:
+        clan['type'] = data['type']
+    if 'required_trophies' in data:
+        clan['required_trophies'] = max(0, min(10000, int(data['required_trophies'])))
+
+    await db.save_clan(clan)
+    return web.json_response({'clan': clan})
+
+
+@routes.post('/api/clan/{clan_id}/demote')
+async def demote_member(request: web.Request) -> web.Response:
+    """Demote a clan member"""
+    player_id = get_player_id_from_request(request)
+    if not player_id:
+        return web.json_response({'error': 'Unauthorized'}, status=401)
+
+    clan_id = request.match_info['clan_id']
+    clan = await db.get_clan(clan_id)
+    if not clan:
+        return web.json_response({'error': 'Clan not found'}, status=404)
+
+    # Check if player is leader or co-leader
+    player_member = None
+    for m in clan.get('members', []):
+        if m.get('player_id') == player_id:
+            player_member = m
+            break
+
+    if not player_member or player_member.get('role') not in ['leader', 'co-leader']:
+        return web.json_response({'error': 'Insufficient permissions'}, status=403)
+
+    try:
+        data = await request.json()
+    except:
+        return web.json_response({'error': 'Invalid JSON'}, status=400)
+
+    target_id = data.get('player_id')
+    if not target_id:
+        return web.json_response({'error': 'Target player required'}, status=400)
+
+    # Find target member and demote
+    for m in clan['members']:
+        if m.get('player_id') == target_id:
+            current_role = m.get('role', 'member')
+            # Can only demote if you outrank them
+            if current_role == 'co-leader' and player_member.get('role') == 'leader':
+                m['role'] = 'elder'
+            elif current_role == 'elder':
+                m['role'] = 'member'
+            break
+
+    await db.save_clan(clan)
+    return web.json_response({'clan': clan})

@@ -5,19 +5,19 @@
   "is_guest": false,
   "admin": false,
   "created_at": 1767295320.806777,
-  "updated_at": 1767300045.192369,
-  "last_login": 1767299922.569239,
+  "updated_at": 1767335787.317297,
+  "last_login": 1767333203.953574,
   "profile": {
     "name": "deleted",
     "title": "rookie",
     "tower_skin": "default"
   },
   "stats": {
-    "trophies": 150,
+    "trophies": 225,
     "elo": 1000,
-    "wins": 1,
-    "losses": 2,
-    "crowns": 4,
+    "wins": 3,
+    "losses": 5,
+    "crowns": 10,
     "max_streak": 1,
     "current_streak": 0,
     "medals": 0,
@@ -44,12 +44,26 @@
       "arrows",
       "minion",
       "giant",
-      "zap"
+      "zap",
+      "stormspirit",
+      "skel",
+      "royalgiant",
+      "barbarian",
+      "spearthrower",
+      "healspirit"
     ],
     "levels": {},
     "shards": {
       "minion": 8,
-      "healspirit": 9
+      "healspirit": 64,
+      "archer": 150,
+      "stormspirit": 150,
+      "skel": 50,
+      "royalgiant": 100,
+      "barbarian": 50,
+      "spearthrower": 105,
+      "bomber": 50,
+      "knight": 50
     }
   },
   "decks": [
@@ -69,7 +83,7 @@
     []
   ],
   "current_deck": -1,
-  "clan_id": null,
+  "clan_id": "57e8a1fe-f645-4f44-bc26-9f4542346593",
   "chests": [
     null,
     null,

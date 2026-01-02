@@ -1,0 +1,72 @@
+{
+  "id": "57e8a1fe-f645-4f44-bc26-9f4542346593",
+  "name": "Thunder Gods",
+  "badge": "\ud83d\udc09",
+  "description": "welcome",
+  "type": "open",
+  "required_trophies": 0,
+  "created_at": 1767329003.200633,
+  "updated_at": 1767333338.123443,
+  "stats": {
+    "war_wins": 0,
+    "war_trophies": 0,
+    "total_donations": 0
+  },
+  "members": [
+    {
+      "player_id": "8ec0ce37-a947-4add-9e27-37e85f03effd",
+      "name": "deleted",
+      "role": "co-leader",
+      "joined_at": 1767329003.200633,
+      "donations": 0,
+      "last_active": 1767329003.200633
+    },
+    {
+      "player_id": "1b5e332a-556d-41af-b630-bd6c9479587f",
+      "name": "erik2",
+      "role": "leader",
+      "joined_at": 1767331570.741168,
+      "donations": 0,
+      "last_active": 1767331570.741168
+    }
+  ],
+  "chat_history": [
+    {
+      "sender_id": "8ec0ce37-a947-4add-9e27-37e85f03effd",
+      "sender_name": "deleted",
+      "message": "Hi everyone",
+      "timestamp": 1767329122.9652271
+    },
+    {
+      "sender_id": "8ec0ce37-a947-4add-9e27-37e85f03effd",
+      "sender_name": "deleted",
+      "message": "Hi",
+      "timestamp": 1767330778.2877405
+    },
+    {
+      "sender_id": "8ec0ce37-a947-4add-9e27-37e85f03effd",
+      "sender_name": "deleted",
+      "message": "Hi",
+      "timestamp": 1767330783.628292
+    },
+    {
+      "sender_id": "1b5e332a-556d-41af-b630-bd6c9479587f",
+      "sender_name": "erik2",
+      "message": "Hi",
+      "timestamp": 1767331596.694166
+    },
+    {
+      "sender_id": "1b5e332a-556d-41af-b630-bd6c9479587f",
+      "sender_name": "erik2",
+      "message": "Hi",
+      "timestamp": 1767333033.4910545
+    }
+  ],
+  "donation_requests": [],
+  "war": {
+    "active": false,
+    "start_time": null,
+    "participants": [],
+    "attacks": []
+  }
+}

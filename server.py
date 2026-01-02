@@ -400,25 +400,41 @@ def create_app() -> web.Application:
 def main():
     """Main entry point"""
     print(f"""
-╔══════════════════════════════════════════════════════════════╗
-║                                                              ║
-║              ARENA ROYALE MULTIPLAYER SERVER                 ║
-║                                                              ║
-║  Starting on http://{HOST}:{PORT}                            ║
-║  WebSocket: ws://localhost:{PORT}/ws                         ║
-║                                                              ║
-║  Endpoints:                                                  ║
-║    POST /api/auth/register   - Create account                ║
-║    POST /api/auth/login      - Login                         ║
-║    POST /api/auth/guest      - Guest login                   ║
-║    GET  /api/leaderboard/:t  - Leaderboards                  ║
-║    GET  /api/player/:id      - Player profile                ║
-║    POST /api/player/:id/sync - Sync player data              ║
-║    GET  /health              - Server status                 ║
-║                                                              ║
-║  Press Ctrl+C to stop                                        ║
-║                                                              ║
-╚══════════════════════════════════════════════════════════════╝
+================================================================
+      ARENA ROYALE MULTIPLAYER SERVER
+================================================================
+  Starting on http://{HOST}:{PORT}
+  WebSocket: ws://localhost:{PORT}/ws
+
+  Auth Endpoints:
+    POST /api/auth/register      - Create account
+    POST /api/auth/login         - Login
+    POST /api/auth/guest         - Guest login
+    POST /api/auth/validate      - Validate token
+
+  Player Endpoints:
+    GET  /api/player/:id         - Player profile
+    POST /api/player/:id/sync    - Sync player data
+    GET  /api/leaderboard/:type  - Leaderboards
+
+  Clan Endpoints:
+    GET  /api/clans              - List/search clans
+    POST /api/clan               - Create clan
+    GET  /api/clan/:id           - Get clan details
+    POST /api/clan/:id/join      - Join clan
+    POST /api/clan/:id/leave     - Leave clan
+    POST /api/clan/:id/promote   - Promote member
+    POST /api/clan/:id/demote    - Demote member
+    POST /api/clan/:id/kick      - Kick member
+    POST /api/clan/:id/donate    - Donate cards
+    POST /api/clan/:id/request   - Request cards
+    POST /api/clan/:id/settings  - Update clan settings
+
+  Other:
+    GET  /health                 - Server status
+
+  Press Ctrl+C to stop
+================================================================
     """)
 
     app = create_app()

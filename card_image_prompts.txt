@@ -1,0 +1,990 @@
+================================================================================
+ARENA ROYALE - CARD IMAGE GENERATION GUIDE
+================================================================================
+
+GENERAL INSTRUCTIONS FOR ALL CARDS:
+- Art Style: Mobile game card art, Clash Royale/Supercell inspired
+- Vibrant colors, bold outlines, slightly cartoonish but detailed
+- Characters should be expressive and dynamic
+- Background: Transparent or simple gradient matching rarity color
+- Resolution: High quality, suitable for game cards
+
+RARITY COLOR SCHEMES:
+- COMMON: Gray/Silver gradient (#7f8c8d to #5d6d7e)
+- RARE: Orange/Gold gradient (#f39c12 to #d68910)
+- EPIC: Purple gradient (#9b59b6 to #7d3c98)
+- LEGENDARY: Red/Crimson gradient (#e74c3c to #c0392b)
+- CHAMPION: Cyan/Teal gradient (#00bcd4 to #0097a7)
+- EVOLUTION: Orange-Gold with sparkles (#ff6b35 to #f7931e with gold particles)
+
+================================================================================
+4x4 GRID LAYOUT EXPLANATION:
+================================================================================
+Each character gets 16 images in a 4x4 grid:
+
+Row 1 (Top): IDLE POSES
+[1] Front idle - facing camera, neutral stance
+[2] Side idle - profile view, relaxed
+[3] Back idle - rear view, standing
+[4] 3/4 idle - angled view, slight turn
+
+Row 2: ATTACK ANIMATIONS
+[5] Attack windup - preparing to strike
+[6] Attack mid-swing - weapon/ability in motion
+[7] Attack impact - hitting the target
+[8] Attack recovery - returning to stance
+
+Row 3: SPECIAL ACTIONS
+[9] Ability activation - using special power (glow effects)
+[10] Running/moving - in motion
+[11] Taking damage - hurt reaction
+[12] Victory pose - celebrating
+
+Row 4 (Bottom): EXPRESSIONS & EFFECTS
+[13] Happy/Confident expression closeup
+[14] Angry/Battle-ready expression closeup
+[15] Special effect (projectile/spell they cast)
+[16] Death/Defeat animation frame
+
+================================================================================
+COMMON TROOPS
+================================================================================
+
+--- KNIGHT ---
+Character: Medieval knight in simple steel armor, blue tunic underneath
+Weapon: Single-handed sword with cross-guard
+Build: Sturdy, muscular, average height
+Face: Determined, square jaw, short brown hair under open-face helmet
+Colors: Steel gray armor, blue fabric accents, brown leather belt
+
+Grid Details:
+[1] Standing guard, sword at side, shield on arm, facing forward
+[2] Profile showing armor details, sword tip touching ground
+[3] Back view showing cape clasp and sword sheath
+[4] Three-quarter view, one hand on sword hilt
+[5] Raising sword overhead for downward slash
+[6] Mid-swing horizontal sword strike, blur effect on blade
+[7] Sword connecting with impact sparks
+[8] Bringing sword back to guard position
+[9] Blue aura around body (tank mode activated)
+[10] Jogging forward, sword ready, determined expression
+[11] Blocking hit with arm, grimacing, small impact stars
+[12] Sword raised triumphantly, grinning
+[13] Confident smirk, helmet slightly raised
+[14] Gritted teeth, furrowed brow, battle cry
+[15] N/A - no projectile (show sword gleam effect)
+[16] Falling backwards, sword dropping, defeated expression
+
+--- ARCHERS (Pair) ---
+Character: Two female elven archers in green leather armor
+Weapon: Elegant wooden longbows with glowing arrows
+Build: Slim, athletic, pointed ears
+Face: Focused, one blonde, one brunette, matching war paint
+Colors: Forest green leather, brown boots, silver arrow tips
+
+Grid Details:
+[1] Both standing back-to-back, bows at rest
+[2] Side view, one drawing bow, one looking ahead
+[3] Both from behind, quivers visible
+[4] Angled, one kneeling, one standing
+[5] Both drawing arrows from quivers
+[6] Both pulling bows taut, arrows glowing
+[7] Arrows releasing with speed lines
+[8] Lowering bows, reaching for next arrow
+[9] Golden glow on arrows (empowered shot)
+[10] Running side by side, hair flowing
+[11] One flinching, one protecting the other
+[12] High-fiving, bows crossed overhead
+[13] Synchronized wink, confident smile
+[14] Narrowed eyes, lips pursed, aiming
+[15] Glowing arrows in flight (show 2-3 arrows)
+[16] Both collapsed, bows on ground
+
+--- GOBLINS (3x) ---
+Character: Three small green goblins with oversized ears and noses
+Weapon: Rusty daggers, one has a club
+Build: Tiny, hunched, scraggly
+Face: Mischievous grins, sharp teeth, beady yellow eyes
+Colors: Green skin, brown rags for clothes, rusty weapons
+
+Grid Details:
+[1] All three in a row, different heights, menacing poses
+[2] Stacked on each other's shoulders (totem pole style)
+[3] Huddled together plotting, backs to camera
+[4] Triangle formation, ready to attack
+[5] All winding up to throw daggers
+[6] Mid-lunge, daggers extended
+[7] Stabbing motion, impact effect
+[8] Jumping back, giggling
+[9] Eyes glowing green (sneaky mode)
+[10] Scurrying forward on all fours
+[11] One hit, others looking concerned
+[12] Dancing around, waving daggers
+[13] Cackling, tongue out, one winking
+[14] Snarling, teeth bared, angry eyes
+[15] Throwing daggers (3 daggers in arc)
+[16] Piled on top of each other, defeated
+
+--- SKELETONS (3x) ---
+Character: Three cartoon skeletons in tattered purple robes
+Weapon: Small swords and a shield
+Build: Bony, rattling, glowing eye sockets
+Face: Empty eye sockets with purple glow, permanent grin
+Colors: White/cream bones, purple tattered cloth, blue glow
+
+Grid Details:
+[1] Marching in line, bones clicking
+[2] Sideways shuffle, arms swinging
+[3] Backs visible, spines and ribs detailed
+[4] Emerging from ground (half-buried)
+[5] Raising swords above skull
+[6] Slashing downward in unison
+[7] Bones rattling on impact
+[8] Reassembling aft bone piles
+
+--- MINIONS (3x Flying Demons) ---
+Character: Three small purple demons with bat wings
+Weapon: Claws and horns
+Build: Chubby, round bodies, large heads
+Face: One big eye each, horn on top, sharp teeth
+Colors: Dark purple skin, lighter purple wings, red claws
+
+Grid Details:
+[1] Hovering in V-formation
+[2] Flying side by side, profile view
+[3] From behind showing wing detail
+[4] Diving down in formation
+[5] Raising claws to strike
+[6] Swiping with both claws
+[7] Claws connecting, scratch marks appearing
+[8] Flying back up, repositioning
+[9] Eyes glowing red (enraged)
+[10] Flapping rapidly, blur on wings
+[11] One tumbling, others reacting
+[12] Loop-de-loop celebration
+[13] Big toothy grin, eye sparkling
+[14] Angry squint, teeth gnashing
+[15] Purple energy projectiles (3)
+[16] Falling with wings crumpled
+
+--- BOMBER ---
+Character: Short stout goblin-like creature with bomb obsession
+Weapon: Round black bombs with lit fuses
+Build: Short, round belly, big hands for throwing
+Face: Crazy grin, one eye bigger than other, soot-covered
+Colors: Orange/brown skin, black vest, bombs are black with red fuse
+
+Grid Details:
+[1] Holding bomb, crazy grin, fuse lit
+[2] Side profile, arm cocked to throw
+[3] Back view, backpack full of bombs visible
+[4] Juggling 2 bombs, looking at camera
+[5] Winding up throw, big arc motion
+[6] Mid-throw, bomb leaving hand with trail
+[7] Explosion in foreground, bomber celebrating behind
+[8] Reaching for another bomb from pack
+[9] Bigger bomb with golden glow
+[10] Waddling forward, bombs bouncing in pack
+[11] Knocked back, bombs scattering
+[12] Arms up, surrounded by small explosions
+[13] Maniacal laughter, wide eyes
+[14] Intense focus, aiming carefully
+[15] Black bomb with trailing spark
+[16] Buried in bomb pile, dizzy stars
+
+--- BARBARIAN ---
+Character: Muscular warrior with wild orange hair and beard
+Weapon: Large battle axe
+Build: Huge muscles, bare-chested, brown pants
+Face: Fierce expression, war paint on face
+Colors: Orange hair, tan skin, brown leather, silver axe
+
+Grid Details:
+[1] Standing with axe over shoulder
+[2] Profile, flexing muscles
+[3] Back showing massive shoulders
+[4] Slight angle, axe in both hands
+[5] Raising axe high overhead
+[6] Powerful downward chop
+[7] Axe slamming ground, dust cloud
+[8] Pulling axe from ground
+[9] Red rage aura, eyes glowing
+[10] Charging forward, war cry
+[11] Staggering from hit, still fighting
+[12] Beating chest, roaring victory
+[13] Wild grin, teeth showing
+[14] Feral snarl, veins popping
+[15] N/A - show axe motion blur
+[16] Falling to knees, axe dropping
+
+--- FIRE SPIRITS (3x) ---
+Character: Three small flame creatures with faces
+Weapon: Their own bodies (kamikaze)
+Build: Made of fire, wispy trails, small cores
+Face: Cute flame faces, determined eyes
+Colors: Orange/red/yellow flames, blue core
+
+Grid Details:
+[1] Three hovering in triangle, flames dancing
+[2] Lined up, bouncing in place
+[3] Flame trails behind them
+[4] Circling each other
+[5] Winding up to launch
+[6] Streaking toward target
+[7] Exploding on impact (big boom)
+[8] N/A (they die on impact)
+[9] Flames turning blue (super heated)
+[10] Zipping forward leaving fire trails
+[11] Flickering, flames dimming
+[12] Spinning joyfully in circles
+[13] Happy flame face, warm glow
+[14] Intense angry flame, red tint
+[15] Fire stream/explosion effect
+[16] Flames extinguishing, smoke
+
+--- ICE SPIRIT ---
+Character: Cute single ice elemental, snowball-like
+Weapon: Freezing aura
+Build: Round snowball body, ice crystals protruding
+Face: Friendly but mischievous, ice-blue eyes
+Colors: White/light blue, sparkling ice crystals
+
+Grid Details:
+[1] Bouncing cheerfully, crystals glinting
+[2] Side view, ice trail behind
+[3] Back showing crystal spikes
+[4] Slight angle, ready to jump
+[5] Crouching for big leap
+[6] Soaring through air, ice trailing
+[7] Exploding into ice shards (freeze effect)
+[8] N/A (single use)
+[9] Glowing bright blue (super freeze)
+[10] Rolling forward like snowball
+[11] Cracks appearing in ice body
+[12] Spinning on ice crystals
+[13] Cute happy ice face
+[14] Determined cold stare
+[15] Ice explosion/freeze burst effect
+[16] Melting into puddle
+
+--- BATS (5x) ---
+Character: Five tiny dark bats with red eyes
+Weapon: Tiny fangs and claws
+Build: Tiny, rapid wing movement
+Face: Small angry faces, red glowing eyes
+Colors: Dark purple/black fur, red eyes, pink inner ears
+
+Grid Details:
+[1] Swarm cloud formation
+[2] Line formation, flying left
+[3] Scattered formation from behind
+[4] Diving swarm pattern
+[5] Fangs extended, swooping down
+[6] Biting and scratching chaos
+[7] Multiple bite marks appearing
+[8] Circling back for another pass
+[9] Eyes glowing brighter red
+[10] Rapid flutter, motion blur
+[11] Some bats knocked away
+[12] Celebratory loop flying
+[13] Cute bat face with smile
+[14] Angry hissing bat face
+[15] N/A - show swarm silhouette
+[16] Bats falling, poofing
+
+--- ROYAL GIANT ---
+Character: Massive royal soldier with cannon
+Weapon: Huge handheld cannon
+Build: Giant muscular man, crown on head
+Face: Proud, stern, well-groomed mustache
+Colors: Red royal uniform, gold trim, brass cannon
+
+Grid Details:
+[1] Standing tall, cannon at hip
+[2] Profile, showing cannon length
+[3] Back showing ammunition belt
+[4] Aiming cannon at angle
+[5] Lighting cannon fuse
+[6] Cannon firing with smoke
+[7] Cannonball exploding on target
+[8] Reloading new ball
+[9] Golden royal aura
+[10] Slow deliberate march
+[11] Shrugging off damage
+[12] Cannon raised, saluting
+[13] Proud royal smile
+[14] Serious military focus
+[15] Cannonball with smoke trail
+[16] Falling, cannon clattering
+
+================================================================================
+RARE TROOPS
+================================================================================
+
+--- GIANT ---
+Character: Huge slow-moving bald giant
+Weapon: Fists only
+Build: Enormous, barrel-chested, slow-moving
+Face: Simple, friendly, bald head, small eyes
+Colors: Brown/tan skin, metal bracers, blue shorts
+
+Grid Details:
+[1] Standing massive, fists at sides
+[2] Slow turn, showing bulk
+[3] Wide back, muscles defined
+[4] Angled, ready to lumber forward
+[5] Raising huge fist
+[6] Powerful slam down
+[7] Ground cracking from punch
+[8] Shaking hand after punch
+[9] Blue defensive glow
+[10] Slow heavy footsteps, ground shaking
+[11] Barely flinching from attacks
+[12] Fist pump victory
+[13] Gentle giant smile
+[14] Focused serious look
+[15] N/A - show ground impact effect
+[16] Toppling like a tree
+
+--- MUSKETEER ---
+Character: Female soldier in elegant blue uniform
+Weapon: Long musket rifle
+Build: Tall, slender, elegant posture
+Face: Beautiful, focused, feathered hat
+Colors: Blue and white uniform, gold buttons, brown musket
+
+Grid Details:
+[1] At attention, musket at shoulder
+[2] Profile, aiming down sights
+[3] Back showing dress uniform
+[4] Angled ready stance
+[5] Raising musket to aim
+[6] Pulling trigger, flash from barrel
+[7] Bullet impact effect
+[8] Reloading with smooth motion
+[9] Golden accuracy aura
+[10] Marching gracefully
+[11] Staggered but maintaining aim
+[12] Curtsy with musket
+[13] Confident smile
+[14] Steely determined gaze
+[15] Musket bullet with smoke trail
+[16] Falling elegantly
+
+--- VALKYRIE ---
+Character: Fierce female Viking warrior
+Weapon: Large double-bladed battleaxe
+Build: Athletic, strong, braided red hair
+Face: Wild grin, war paint, fierce eyes
+Colors: Silver armor plates, orange hair, iron axe
+
+Grid Details:
+[1] Axe resting on shoulder, hip cocked
+[2] Profile, showing axe detail
+[3] Back showing braids
+[4] Ready stance, axe in both hands
+[5] Starting to spin
+[6] Full spin, axe blurring in circle
+[7] 360-degree slash, enemies hit
+[8] Stopping spin, stabilizing
+[9] Flaming axe effect
+[10] Running with axe trailing
+[11] Hit mid-spin, stumbling
+[12] Axe raised, roaring victory
+[13] Wild fierce grin
+[14] Battle cry, eyes wide
+[15] Circular axe sweep effect
+[16] Collapsing, axe stuck in ground
+
+--- HOG RIDER ---
+Character: Dark-skinned warrior riding a giant hog
+Weapon: Hammer
+Build: Muscular shirtless man on large battle hog
+Face: Excited, mohawk hairstyle, tribal markings
+Colors: Brown hog, gold/red decorations, hammer
+
+Grid Details:
+[1] Mounted on hog, hammer ready
+[2] Side gallop, hammer raised
+[3] Hog rear view, rider turning
+[4] Charging angle, leaning forward
+[5] Hammer raised for strike
+[6] Leaping hog, hammer swinging
+[7] Hammer smashing building
+[8] Circling for another charge
+[9] Both glowing with charge energy
+[10] Full gallop, dust clouds
+[11] Hog stumbling, rider holding on
+[12] Standing on hog, arms up
+[13] Crazy excited grin
+[14] Intense charge face
+[15] N/A - show building debris
+[16] Hog and rider tumbling
+
+--- WITCH ---
+Character: Purple-robed witch with staff
+Weapon: Magic staff, summons skeletons
+Build: Thin, hunched, feminine
+Face: Beautiful but sinister, glowing eyes
+Colors: Purple robes, green magic, skull staff
+
+Grid Details:
+[1] Floating slightly, staff glowing
+[2] Side profile, robes flowing
+[3] Back with robe train
+[4] Angled, casting pose
+[5] Raising staff, energy gathering
+[6] Firing green magic bolt
+[7] Magic explosion effect
+[8] Summoning skeleton from ground
+[9] Eyes and staff glowing bright purple
+[10] Floating forward, robes trailing
+[11] Knocked back, maintaining spell
+[12] Cackling, surrounded by skeletons
+[13] Mysterious smirk
+[14] Evil grimace, sharp teeth
+[15] Green magical projectile
+[16] Collapsing, staff fading
+
+--- BALLOON ---
+Character: Flying hot air balloon with skeleton bomber
+Weapon: Bombs dropped from below
+Build: Large bomb-shaped balloon, basket below
+Face: Skull pilot visible, single bomb in hand
+Colors: Black and orange striped balloon, bone basket
+
+Grid Details:
+[1] Floating peacefully, skull waving
+[2] Side view, basket and balloon detail
+[3] Rear view, balloon full
+[4] Angled, descending slowly
+[5] Skull preparing bomb
+[6] Bomb dropping, skull watching
+[7] Massive explosion below
+[8] Rising from explosion
+[9] Golden glow on balloon
+[10] Drifting toward target
+[11] Balloon getting holes, patching
+[12] Skull doing victory dance in basket
+[13] Skull happy face
+[14] Skull menacing grin
+[15] Black bomb falling
+[16] Balloon deflating, fallinger hit
+[9] Purple flames around bones (empowered)
+[10] Running with janky animation (bones flopping)
+[11] One losing an arm, looking at it confused
+[12] Doing a bone-rattling dance
+[13] Eye sockets glowing bright, "laughing"
+[14] Jaws open wide, angry purple glow
+[15] N/A - show bone fragments flying
+[16] Crumbling into
+
+================================================================================
+EPIC TROOPS
+================================================================================
+
+--- BABY DRAGON ---
+Character: Cute small dragon with wings
+Weapon: Fire breath
+Build: Chubby baby dragon, short wings
+Face: Cute but fierce, big eyes
+Colors: Green scales, orange belly, yellow eyes
+
+Grid Details:
+[1] Hovering, wings flapping
+[2] Side view, tail curled
+[3] Back showing wings fully
+[4] Angled, small roar
+[5] Inhaling deeply
+[6] Breathing fire stream
+[7] Fire engulfing targets
+[8] Catching breath, smoke wisps
+[9] Blue fire (super heated)
+[10] Flying forward, determined
+[11] Hit mid-flight, tumbling
+[12] Loop-de-loop, tiny roar
+[13] Cute dragon smile
+[14] Fierce little snarl
+[15] Fire breath stream
+[16] Wings crumpling, falling
+
+--- MINI PEKKA ---
+Character: Small robot knight, mechanical
+Weapon: Massive sword for its size
+Build: Robot, blue armor, glowing visor
+Face: Single glowing pink visor, steam vents
+Colors: Dark blue metal, pink glow, silver sword
+
+Grid Details:
+[1] Standing attention, sword ready
+[2] Profile, showing compact build
+[3] Back showing steam vents
+[4] Angled, sword raised
+[5] Winding up huge swing
+[6] Massive sword slash
+[7] Devastating impact hit
+[8] Resetting stance
+[9] Pink energy overload glow
+[10] Marching mechanically
+[11] Sparking from damage
+[12] Sword raised, steam blast
+[13] Visor glowing bright (happy)
+[14] Visor flashing red (angry)
+[15] Sword swing effect
+[16] Powering down, falling
+
+--- WIZARD ---
+Character: Powerful mage with staff
+Weapon: Fire magic, staff
+Build: Bearded, robed, mystical
+Face: Wise old face, long beard
+Colors: Red/orange robes, wooden staff, fire effects
+
+Grid Details:
+[1] Floating, staff glowing
+[2] Side view, robes flowing
+[3] Back, robe and beard detail
+[4] Casting pose, staff forward
+[5] Channeling fire energy
+[6] Launching fireball
+[7] Fireball explosion
+[8] Preparing next spell
+[9] Flame aura surrounding
+[10] Floating forward
+[11] Knocked back, maintaining stance
+[12] Staff raised, fire display
+[13] Wise knowing smile
+[14] Intense focused glare
+[15] Large fireball projectile
+[16] Collapsing, staff dim
+
+--- PRINCE ---
+Character: Noble prince on white horse
+Weapon: Long lance
+Build: Armored knight on armored horse
+Face: Young, handsome, determined
+Colors: Blue armor, white horse, gold trim
+
+Grid Details:
+[1] Mounted, lance upright
+[2] Horse prancing, side view
+[3] Rear view, cape flowing
+[4] Charging angle
+[5] Lowering lance to charge
+[6] Full gallop, lance extended
+[7] Lance impaling target
+[8] Circling back
+[9] Golden charge glow
+[10] Full speed charge
+[11] Horse rearing from hit
+[12] Lance raised in triumph
+[13] Noble confident smile
+[14] Battle-ready intensity
+[15] N/A - show charge blur
+[16] Falling from horse
+
+--- GOLEM ---
+Character: Massive stone elemental
+Weapon: Stone fists
+Build: Huge, made of rocks, glowing core
+Face: Simple stone face, glowing eyes
+Colors: Gray/brown stone, magma orange glow
+
+Grid Details:
+[1] Standing massive, arms down
+[2] Side view, rock detail
+[3] Back showing boulder formation
+[4] Angled, fists ready
+[5] Raising huge stone fist
+[6] Crushing downward punch
+[7] Ground shattering impact
+[8] Reforming arm
+[9] Magma glowing through cracks
+[10] Slow earth-shaking steps
+[11] Chunks falling off, regenerating
+[12] Arms up, stones orbiting
+[13] Content stone expression
+[14] Angry glowing cracks
+[15] N/A - show rock debris
+[16] Crumbling into golemites
+
+================================================================================
+LEGENDARY TROOPS
+================================================================================
+
+--- P.E.K.K.A ---
+Character: Huge armored robot knight
+Weapon: Massive two-handed sword
+Build: Tall, heavily armored, imposing
+Face: Glowing pink butterfly visor
+Colors: Dark purple armor, pink glow, massive silver sword
+
+Grid Details:
+[1] Standing imposing, sword point down
+[2] Profile showing armor bulk
+[3] Back showing armor plating
+[4] Angled, sword in both hands
+[5] Raising sword overhead
+[6] Devastating downward slash
+[7] Crushing blow impact
+[8] Pulling sword from ground
+[9] Pink energy overload, sparking
+[10] Heavy mechanical march
+[11] Armor denting, still standing
+[12] Sword raised triumphantly
+[13] Visor bright pink (happy)
+[14] Visor red flashing (angry)
+[15] Sword impact shockwave
+[16] Collapsing, sword falling
+
+--- MEGA KNIGHT ---
+Character: Massive armored warrior with jumping ability
+Weapon: Spiked fists
+Build: Huge armor with jet boots
+Face: Intimidating helmet, glowing eyes
+Colors: Orange/gold armor, fire effects
+
+Grid Details:
+[1] Landing pose, ground cracked
+[2] Side standing, fists ready
+[3] Back showing jet vents
+[4] Jumping prep crouch
+[5] Boosting into air
+[6] Descending with fists down
+[7] Massive splash landing
+[8] Rising from crater
+[9] Full flame jets engaged
+[10] Heavy stomping forward
+[11] Armor damaged, still fighting
+[12] Fist pump, jets firing
+[13] Helmet eyes smirking
+[14] Furious flaming eyes
+[15] Shockwave from landing
+[16] Falling, jets failing
+
+--- SPARKY ---
+Character: Electric Tesla-tank robot
+Weapon: Massive electrical discharge
+Build: Treaded tank base, Tesla coil top
+Face: Single robotic "eye" screen
+Colors: Rusty metal, blue electricity
+
+Grid Details:
+[1] Idle, electricity crackling
+[2] Side view, treads visible
+[3] Rear showing generator
+[4] Angled, charging up
+[5] Electricity building
+[6] Halfway charged, arcing
+[7] Full discharge ZAP
+[8] Recharging, smoke clearing
+[9] Overcharged, sparking everywhere
+[10] Rolling forward slowly
+[11] Short-circuiting from hit
+[12] Victory discharge display
+[13] Happy screen face
+[14] Angry targeting face
+[15] Massive lightning bolt
+[16] Exploding in sparks
+
+--- INFERNO DRAGON ---
+Character: Dragon with fire beam
+Weapon: Ramping inferno beam
+Build: Sleek dragon, mechanical parts
+Face: Fierce dragon face, glowing maw
+Colors: Red/orange scales, blue fire core
+
+Grid Details:
+[1] Hovering, mouth glowing
+[2] Profile, wings spread
+[3] Back, showing wing mechanism
+[4] Angled, targeting something
+[5] Beam starting (small flame)
+[6] Beam ramping (medium)
+[7] Full power beam (intense blue)
+[8] Beam cooling down
+[9] Overheated, extra blue glow
+[10] Flying forward, tracking
+[11] Hit mid-beam, restarting
+[12] Celebratory flame burst
+[13] Satisfied dragon expression
+[14] Intense burning glare
+[15] Ramping inferno beam stages
+[16] Crash landing, flames out
+
+--- ICE WIZARD ---
+Character: Cool blue wizard with ice magic
+Weapon: Ice blasts
+Build: Slim, icy robes, frost effects
+Face: Cool demeanor, ice beard
+Colors: Blue/white robes, ice crystals, frost
+
+Grid Details:
+[1] Floating on ice cloud
+[2] Side view, ice trailing
+[3] Back showing ice cape
+[4] Casting pose
+[5] Gathering ice energy
+[6] Launching ice shard
+[7] Enemies freezing
+[8] Conjuring more ice
+[9] Full blizzard mode
+[10] Skating forward on ice
+[11] Partially melting from hit
+[12] Ice sculpture victory pose
+[13] Cool smirk
+[14] Cold stare (literally)
+[15] Ice shard projectile
+[16] Shattering into ice
+
+--- ELECTRO WIZARD ---
+Character: Electric mage with dual lightning
+Weapon: Double lightning bolts
+Build: Spiky hair, electric robes
+Face: Crazy grin, electric hair
+Colors: White/blue robes, yellow lightning
+
+Grid Details:
+[1] Crackling with electricity
+[2] Side view, hands sparking
+[3] Back showing electric cape
+[4] Dual hand casting pose
+[5] Charging both hands
+[6] Firing dual lightning
+[7] Dual target stun
+[8] Recharging briefly
+[9] Full electric aura
+[10] Teleporting forward
+[11] Shocked face from hit
+[12] Electric victory dance
+[13] Maniac electric grin
+[14] Intense shock face
+[15] Dual lightning bolts
+[16] Electric overload, collapse
+
+--- PRINCESS ---
+Character: Long-range archer princess
+Weapon: Flaming arrows, crossbow
+Build: Elegant, light armor, tiara
+Face: Beautiful, confident, royal
+Colors: Pink dress, gold tiara, flaming arrows
+
+Grid Details:
+[1] Elegant stance, bow ready
+[2] Side view, aiming far
+[3] Back showing quiver
+[4] Angled royal pose
+[5] Drawing bow back
+[6] Releasing flaming arrow
+[7] Arrow hitting distant target
+[8] Reaching for next arrow
+[9] Golden royal aura
+[10] Walking gracefully
+[11] Dodging elegantly
+[12] Curtsy victory pose
+[13] Royal confident smile
+[14] Serious focused aim
+[15] Flaming arrow in flight
+[16] Fainting dramatically
+
+--- BANDIT ---
+Character: Fast dashing assassin
+Weapon: Sickle blades
+Build: Hooded, slim, agile
+Face: Masked, only eyes visible
+Colors: Purple/black outfit, silver blades
+
+Grid Details:
+[1] Crouched ready to dash
+[2] Side profile, hood up
+[3] Back showing cloak
+[4] Angled, blades drawn
+[5] About to dash (blur starting)
+[6] Mid-dash (invincible blur)
+[7] Striking from dash
+[8] Appearing from dash
+[9] Shadow aura (invisible)
+[10] Running with cloak flowing
+[11] Rolling from attack
+[12] Dramatic cloak flip
+[13] Mysterious eyes smirk
+[14] Deadly focused glare
+[15] Dash blur effect
+[16] Collapsing in shadows
+
+================================================================================
+CHAMPION TROOPS
+================================================================================
+
+--- GOLDEN KNIGHT ---
+Character: Elite knight in golden armor
+Weapon: Golden sword
+Build: Heroic proportions, flowing cape
+Face: Handsome, golden helmet
+Colors: Gold and white, glowing effects
+
+Grid Details:
+[1] Heroic pose, sword glinting
+[2] Side view, cape flowing
+[3] Back showing cape fully
+[4] Battle ready stance
+[5] Charging dash beginning
+[6] Dashing through enemies
+[7] Multi-target chain hit
+[8] Landing from dash
+[9] Full golden aura ability
+[10] Running with speed lines
+[11] Blocking with shield
+[12] Sword salute victory
+[13] Heroic smile
+[14] Determined battle focus
+[15] Chain dash effect
+[16] Kneeling, defeated
+
+--- ARCHER QUEEN ---
+Character: Royal archer with cloak ability
+Weapon: Royal crossbow
+Build: Regal, armored dress, crown
+Face: Queen beauty, fierce eyes
+Colors: Purple and gold, royal cape
+
+Grid Details:
+[1] Royal archer stance
+[2] Side aiming pose
+[3] Back showing cape/crown
+[4] Angled, crossbow ready
+[5] Activating cloak (fading)
+[6] Invisible but crossbow visible
+[7] Rapid fire while cloaked
+[8] Uncloaking, reloading
+[9] Full invisibility effect
+[10] Striding confidently
+[11] Cloak disrupted by hit
+[12] Crown adjusting victory
+[13] Regal smile
+[14] Deadly focused stare
+[15] Crossbow bolt
+[16] Dramatic royal fall
+
+--- SKELETON KING ---
+Character: Undead king who summons skeletons
+Weapon: Bone scepter/mace
+Build: Large skeleton in royal armor
+Face: Crown on skull, glowing purple eyes
+Colors: Black armor, gold crown, purple magic
+
+Grid Details:
+[1] Seated on bone throne (if space) or standing regally
+[2] Side view, cape of shadows
+[3] Back showing tattered cape
+[4] Raising scepter
+[5] Gathering soul energy
+[6] Slamming scepter down
+[7] Skeleton army rising
+[8] Commanding skeletons forward
+[9] Purple soul aura
+[10] Marching with authority
+[11] Bones rattling from hit
+[12] Scepter raised, skeletons bowing
+[13] Hollow eye socket "smile"
+[14] Burning purple eyes rage
+[15] Soul orbs floating
+[16] Crumbling but reforming
+
+================================================================================
+EVOLUTION TROOPS
+================================================================================
+
+All Evolution cards should have:
+- Sparkle/glitter effects throughout
+- More detailed/upgraded versions of original
+- Golden trim and enhancement glow
+- Ability indicator on costume
+
+--- EVO KNIGHT ---
+Same as Knight but:
+- Golden armor trim
+- Glowing shield emblem
+- Charge effect on shield
+- Sparkle particles
+Ability visual: Shield glows bright when charging
+
+--- EVO ARCHER ---
+Same as Archers but:
+- Crystal arrow tips
+- Triple arrow nock visible
+- Glowing bowstring
+- More detailed armor
+Ability visual: Three arrows simultaneously
+
+--- EVO HOG RIDER ---
+Same as Hog Rider but:
+- Hog has golden armor
+- Rider has jet boots
+- Smoke trails from boots
+- Enhanced hammer
+Ability visual: Jumping arc with flame trail
+
+================================================================================
+SPELLS (No character, show effects)
+================================================================================
+
+For spells, create:
+[1-4] Four stages of the spell casting/appearing
+[5-8] Four stages of the spell in action
+[9-12] Four stages of the spell impact/effect
+[13-16] Four different angles/variations of the effect
+
+--- ARROWS ---
+Swarm of arrows falling from sky, show progression and impact
+
+--- ZAP ---
+Lightning bolt strikes, show charge, strike, stun effect
+
+--- FIREBALL ---
+Flaming sphere, show flight, impact, explosion
+
+--- TORNADO ---
+Swirling vortex, show formation, pull effect, dissipation
+
+--- ROCKET ---
+Missile launch, flight, massive explosion
+
+--- POISON ---
+Toxic cloud, show spreading and damage tick effects
+
+--- LIGHTNING ---
+Three lightning bolts targeting top 3 HP enemies
+
+--- RAGE ---
+Purple energy wave boosting troops, speed lines
+
+--- GRAVEYARD ---
+Ghostly area where skeletons rise from ground
+
+================================================================================
+BUILDINGS
+================================================================================
+
+--- CANNON ---
+Defense turret, show idle, aiming, firing, destroyed states
+
+--- TOMBSTONE ---
+Creepy grave marker, show spawning skeletons
+
+--- INFERNAL TOWER ---
+Demonic spire with ramping beam attack
+
+================================================================================
+END OF CARD GENERATION GUIDE
+================================================================================
+
+TIPS FOR THE IMAGE MODEL:
+1. Generate as 4x4 grid (4 columns, 4 rows)
+2. Each cell should be same size, square format works best
+3. Use consistent lighting across all 16 images
+4. Keep transparent or simple backgrounds
+5. High detail, mobile game art style
+6. Expressive characters with personality
+7. Clear silhouettes that read well at small sizes
+8. Consistent character proportions across poses
