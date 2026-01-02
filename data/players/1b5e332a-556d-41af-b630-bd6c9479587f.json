@@ -1,0 +1,97 @@
+{
+  "id": "1b5e332a-556d-41af-b630-bd6c9479587f",
+  "username": "erik2",
+  "password_hash": "$2b$12$5QUc3/ac9UFoYAEIn/Z9Q.GgzyHguvBdSIO7Lgic/JEW1VnBHj6M6",
+  "is_guest": false,
+  "created_at": 1767331045.209069,
+  "updated_at": 1767333134.225494,
+  "last_login": 1767331045.209069,
+  "profile": {
+    "name": "erik2",
+    "title": "rookie",
+    "tower_skin": "default"
+  },
+  "stats": {
+    "trophies": 150,
+    "elo": 1000,
+    "wins": 1,
+    "losses": 0,
+    "crowns": 3,
+    "max_streak": 1,
+    "current_streak": 0,
+    "medals": 0,
+    "medals_wins": 0,
+    "medals_losses": 0,
+    "medals_highest": 0,
+    "comp_wins": 0,
+    "comp_losses": 0,
+    "comp_trophies": 0
+  },
+  "banned": false,
+  "resources": {
+    "gold": 1000,
+    "gems": 100,
+    "crystals": 0,
+    "star_points": 0,
+    "royal_wild_cards": 0
+  },
+  "cards": {
+    "unlocked": [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    "levels": {},
+    "shards": {
+      "tornado": 12,
+      "bats": 14,
+      "lightning": 7,
+      "shieldmaiden": 7,
+      "spiritshaman": 6,
+      "voidspider": 9,
+      "blademaster": 5,
+      "infernolord": 5,
+      "bloodbaron": 14,
+      "shadowdragon": 14
+    }
+  },
+  "decks": [
+    [
+      "knight",
+      "archer",
+      "goblin",
+      "bomber",
+      "arrows",
+      "minion",
+      "giant",
+      "zap"
+    ],
+    [],
+    [],
+    [],
+    []
+  ],
+  "current_deck": 0,
+  "clan_id": "57e8a1fe-f645-4f44-bc26-9f4542346593",
+  "chests": [
+    null,
+    null,
+    null,
+    null
+  ],
+  "battle_pass": {
+    "level": 1,
+    "xp": 0,
+    "premium": false,
+    "claimed": []
+  },
+  "trophy_road": {
+    "claimed": []
+  },
+  "battle_log": []
+}

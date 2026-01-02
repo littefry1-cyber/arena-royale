@@ -47,17 +47,31 @@ POST /api/clan/:id/settings  - Update clan settings
 
 ## Project Structure
 ```
-/api          - REST endpoints (auth, players, clans, trading)
-/websocket    - Real-time battle sync
-/database     - JSON database layer
-/services     - Auth & matchmaking services
-/data         - Player data storage
-/css          - Stylesheets (styles.css)
-/js           - Game logic (game.js)
-index.html    - Main game client (HTML only)
-dashboard.html - Admin dashboard
-server.py     - Main backend server
+/api              - REST endpoints (auth, players, clans, trading)
+/websocket        - Real-time battle sync
+/database         - JSON database layer
+/services         - Auth & matchmaking services
+/data             - Player data storage
+/css              - Stylesheets (styles.css)
+/js               - Game logic
+  /modules        - Modular JS components
+    config.js     - Game constants & configuration
+    utils.js      - Utility functions
+    audio.js      - Sound effects system
+    notifications.js - Toast notifications
+  game.js         - Main game logic (7400+ lines)
+index.html        - Main game client (HTML only)
+dashboard.html    - Admin dashboard
+server.py         - Main backend server
 ```
+
+## Frontend Modules
+The JavaScript is being modularized into separate files:
+- **config.js** - Server URLs, game constants, shop items, rewards
+- **utils.js** - Helper functions (formatting, math, role normalization)
+- **audio.js** - Sound effects with Web Audio API
+- **notifications.js** - Toast notifications and confirmations
+- **game.js** - Main game logic (battle, cards, clans, UI)
 
 ## Running
 - `start_server.bat` - Backend API + WebSocket server (port 5004)
