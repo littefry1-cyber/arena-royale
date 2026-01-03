@@ -847,15 +847,19 @@ function handleOpponentAction(data) {
 
   console.log('Opponent action:', action);
 
+  const a = document.getElementById('arena');
+  // Denormalize coordinates from 0-1 range to local screen pixels
+  // Coordinates are sent as normalized values (0-1) for cross-screen-size compatibility
+  const localX = action.x * a.offsetWidth;
+  // Mirror Y axis (opponent's bottom is our top) and denormalize
+  const localY = (1 - action.y) * a.offsetHeight;
+
   // Handle troop spawn
   if (action.type === 'spawn_troop') {
     const card = getCard(action.card_id);
     if (card) {
       const lvlCard = { ...card, hp: card.hp, dmg: card.dmg, lvl: action.level || 1 };
-      // Flip coordinates for opponent (mirror Y axis)
-      const a = document.getElementById('arena');
-      const mirrorY = a.offsetHeight - action.y;
-      spawnTroopForOpponent(lvlCard, action.x, mirrorY, action.lane);
+      spawnTroopForOpponent(lvlCard, localX, localY, action.lane);
     }
   }
 
@@ -863,9 +867,7 @@ function handleOpponentAction(data) {
   if (action.type === 'cast_spell') {
     const card = getCard(action.card_id);
     if (card) {
-      const a = document.getElementById('arena');
-      const mirrorY = a.offsetHeight - action.y;
-      castSpellForOpponent(card, action.x, mirrorY);
+      castSpellForOpponent(card, localX, localY);
     }
   }
 
@@ -873,9 +875,7 @@ function handleOpponentAction(data) {
   if (action.type === 'spawn_building') {
     const card = getCard(action.card_id);
     if (card) {
-      const a = document.getElementById('arena');
-      const mirrorY = a.offsetHeight - action.y;
-      spawnBuildingForOpponent(card, action.x, mirrorY, action.lane);
+      spawnBuildingForOpponent(card, localX, localY, action.lane);
     }
   }
 }
@@ -913,26 +913,88 @@ function spawnTroopForOpponent(card, x, y, lane) {
 }
 
 function castSpellForOpponent(card, x, y) {
-  // Handle opponent spells (simplified - reuse existing spell logic)
+  // Handle opponent spells - same logic as castSpell but with 'ai' as the side
   const a = document.getElementById('arena');
-  const r = card.radius * 16;
+  const r = (card.radius || 3) * 16;
+  const side = 'ai';
+  const targetSide = 'player';
+  const lane = x < a.offsetWidth / 2 ? 'left' : 'right';
 
-  // Visual effect
-  const fx = document.createElement('div');
-  fx.className = 'spell-effect';
-  fx.style.left = (x - r) + 'px';
-  fx.style.top = (y - r) + 'px';
-  fx.style.width = (r * 2) + 'px';
-  fx.style.height = (r * 2) + 'px';
-  a.appendChild(fx);
-  setTimeout(() => fx.remove(), 500);
+  // Goblin Barrel - spawns goblins at target location
+  if (card.id === 'goblinbarrel') {
+    const goblinCard = getCard('goblin');
+    if (goblinCard) {
+      const mult = B.botMult || 1;
+      const goblinData = { ...goblinCard, hp: Math.floor(goblinCard.hp * mult), dmg: Math.floor(goblinCard.dmg * mult), cnt: 1, towerLock: true };
+      const offsets = [{ ox: 0, oy: -10 }, { ox: -12, oy: 8 }, { ox: 12, oy: 8 }];
+      offsets.forEach(off => {
+        const gx = Math.max(10, Math.min(a.offsetWidth - 10, x + off.ox));
+        const gy = y + off.oy;
+        spawnTroopForOpponent(goblinData, gx, gy, lane);
+      });
+      const barrel = document.createElement('div');
+      barrel.style.cssText = `position:absolute;left:${x - 15}px;top:${y - 15}px;font-size:30px;pointer-events:none;z-index:100;animation:barrelLand 0.3s forwards`;
+      barrel.textContent = '🛢️';
+      a.appendChild(barrel);
+      setTimeout(() => barrel.remove(), 300);
+    }
+    return;
+  }
 
-  // Apply spell damage to player troops
-  if (card.dmg) {
-    B.troops.filter(t => t.side === 'player').forEach(t => {
-      const dx = t.x - x, dy = t.y - y;
-      if (Math.sqrt(dx * dx + dy * dy) <= r) {
-        t.hp -= card.dmg;
+  // Graveyard - spawns skeletons over time at target location
+  if (card.id === 'graveyard') {
+    const skelCard = getCard('skel');
+    if (skelCard) {
+      const mult = B.botMult || 1;
+      const fx = document.createElement('div');
+      fx.className = 'graveyard-zone';
+      fx.style.cssText = `position:absolute;left:${x - r}px;top:${y - r}px;width:${r * 2}px;height:${r * 2}px;border-radius:50%;background:radial-gradient(rgba(80,80,100,0.6),rgba(40,40,60,0.3));pointer-events:none;z-index:50;animation:pulse 1s infinite;border:2px dashed rgba(150,150,180,0.5);`;
+      a.appendChild(fx);
+      if (!B.graveyardEffects) B.graveyardEffects = [];
+      B.graveyardEffects.push({ x, y, radius: r, remaining: card.duration, side, lane, el: fx, spawnTimer: 0, skelCard, mult, spawned: 0, maxSpawns: 15 });
+    }
+    return;
+  }
+
+  // Duration spells like Poison
+  if (card.duration) {
+    const fx = document.createElement('div');
+    fx.className = 'poison-zone';
+    fx.style.cssText = `position:absolute;left:${x - r}px;top:${y - r}px;width:${r * 2}px;height:${r * 2}px;border-radius:50%;background:radial-gradient(rgba(150,50,200,0.5),rgba(100,0,150,0.2));pointer-events:none;z-index:50;animation:pulse 1s infinite;`;
+    a.appendChild(fx);
+    if (!B.spellEffects) B.spellEffects = [];
+    B.spellEffects.push({ x, y, radius: r, dps: card.dmg, remaining: card.duration, side, el: fx, tickTimer: 0 });
+  } else {
+    // Instant damage spells
+    const fx = document.createElement('div');
+    fx.style.cssText = `position:absolute;left:${x - r}px;top:${y - r}px;width:${r * 2}px;height:${r * 2}px;border-radius:50%;background:radial-gradient(rgba(255,200,50,0.7),transparent);pointer-events:none;z-index:100;`;
+    a.appendChild(fx);
+    setTimeout(() => fx.remove(), 350);
+
+    // Damage player troops
+    B.troops.forEach(t => {
+      if (t.side === targetSide && t.hp > 0) {
+        const d = Math.sqrt((t.x - x) ** 2 + (t.y - y) ** 2);
+        if (d < r) {
+          t.hp -= card.dmg;
+          showDmg(t.x, t.y, '-' + card.dmg);
+          if (card.stun) t.stun = card.stun;
+        }
+      }
+    });
+
+    // Damage player towers
+    const towerKeys = ['pL', 'pR', 'pK'];
+    towerKeys.forEach(k => {
+      const tw = B.towers[k];
+      if (!tw.dead) {
+        const d = Math.sqrt((tw.x - x) ** 2 + (tw.y - y) ** 2);
+        if (d < r + 20) {
+          const dmg = Math.floor(card.dmg * 0.35);
+          tw.hp -= dmg;
+          showDmg(tw.x, tw.y, '-' + dmg);
+          updateTower(k);
+        }
       }
     });
   }
@@ -966,16 +1028,20 @@ function spawnBuildingForOpponent(card, x, y, lane) {
 }
 
 // Send troop spawn to server for multiplayer sync
+// Coordinates are normalized to 0-1 range for cross-screen-size compatibility
 function sendTroopSpawn(card, x, y, lane) {
   if (B && B.isMultiplayer) {
+    const a = document.getElementById('arena');
+    const normalizedX = x / a.offsetWidth;
+    const normalizedY = y / a.offsetHeight;
     NET.send('battle_action', {
       battle_id: B.battleId,
       action: {
         type: 'spawn_troop',
         card_id: card.id,
         level: card.lvl || 1,
-        x: x,
-        y: y,
+        x: normalizedX,
+        y: normalizedY,
         lane: lane
       }
     });
@@ -983,30 +1049,38 @@ function sendTroopSpawn(card, x, y, lane) {
 }
 
 // Send spell cast to server for multiplayer sync
+// Coordinates are normalized to 0-1 range for cross-screen-size compatibility
 function sendSpellCast(card, x, y) {
   if (B && B.isMultiplayer) {
+    const a = document.getElementById('arena');
+    const normalizedX = x / a.offsetWidth;
+    const normalizedY = y / a.offsetHeight;
     NET.send('battle_action', {
       battle_id: B.battleId,
       action: {
         type: 'cast_spell',
         card_id: card.id,
-        x: x,
-        y: y
+        x: normalizedX,
+        y: normalizedY
       }
     });
   }
 }
 
 // Send building spawn to server for multiplayer sync
+// Coordinates are normalized to 0-1 range for cross-screen-size compatibility
 function sendBuildingSpawn(card, x, y, lane) {
   if (B && B.isMultiplayer) {
+    const a = document.getElementById('arena');
+    const normalizedX = x / a.offsetWidth;
+    const normalizedY = y / a.offsetHeight;
     NET.send('battle_action', {
       battle_id: B.battleId,
       action: {
         type: 'spawn_building',
         card_id: card.id,
-        x: x,
-        y: y,
+        x: normalizedX,
+        y: normalizedY,
         lane: lane
       }
     });
