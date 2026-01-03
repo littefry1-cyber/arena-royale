@@ -361,7 +361,31 @@ const NET = {
 
   // Load player data from server
   async loadPlayerData(serverPlayer) {
-    // Merge server data with local format
+    // Clear local storage and reset P to defaults - server is source of truth
+    localStorage.removeItem('arena_royale_v3');
+    P.name = 'Player';
+    P.deck = [];
+    P.tr = 0;
+    P.gold = 5000;
+    P.gems = 50;
+    P.crystals = 0;
+    P.wins = 0;
+    P.losses = 0;
+    P.streak = 0;
+    P.maxStr = 0;
+    P.crowns = 0;
+    P.lvls = {};
+    P.shards = {};
+    P.unlocked = [...STARTER_CARDS];
+    P.chests = Array(MAX_CHESTS).fill(null);
+    P.medals = 0;
+    P.compWins = 0;
+    P.compLosses = 0;
+    P.compTrophies = 0;
+    P.starPoints = 0;
+    CARDS.forEach(c => { P.lvls[c.id] = 1; P.shards[c.id] = 0; });
+
+    // Now load server data on top of defaults
     if (serverPlayer.profile) {
       P.name = serverPlayer.profile.name || P.name;
     }
@@ -1511,7 +1535,7 @@ const CHEST_TYPES=[{id:'silver',name:'Silver',icon:'📦',time:180,gold:[200,400
 const BOT_NAMES=['xXSlayerXx','ProGamer99','ClashKing','TowerCrusher','EliteWarrior','DragonMaster','ShadowNinja','BattleLord','ThunderStrike','IceQueen','FirePhoenix','DarkKnight','StormBringer','RoyalChamp','MightyTitan','SwiftArrow','IronFist','GhostRider','StarLord','NightHawk','BlazeMaster','FrostBite','CyberWolf','PixelKing','NoobSlayer','EpicGamer','LegendX','Destroyer99','ChampionX','VictoryKing'];
 const SHOP_ITEMS=[{id:'gold1',name:'Pile of Gold',desc:'1,000 Gold',icon:'💰',price:50,currency:'gems',reward:{gold:1000}},{id:'gold2',name:'Sack of Gold',desc:'5,000 Gold',icon:'💰',price:200,currency:'gems',reward:{gold:5000}},{id:'gold3',name:'Vault of Gold',desc:'20,000 Gold',icon:'💰',price:700,currency:'gems',reward:{gold:20000}},{id:'gold4',name:'Treasury',desc:'100,000 Gold',icon:'🏦',price:3000,currency:'gems',reward:{gold:100000},special:true},{id:'gems1',name:'Handful of Gems',desc:'100 Gems',icon:'💎',price:1000,currency:'gold',reward:{gems:100}},{id:'gems2',name:'Pouch of Gems',desc:'500 Gems',icon:'💎',price:4500,currency:'gold',reward:{gems:500}},{id:'gems3',name:'Gem Vault',desc:'2000 Gems',icon:'💎',price:15000,currency:'gold',reward:{gems:2000}},{id:'chest1',name:'Silver Chest',desc:'Instant open!',icon:'📦',price:30,currency:'gems',reward:{chest:'silver'}},{id:'chest2',name:'Golden Chest',desc:'Great rewards!',icon:'🎁',price:80,currency:'gems',reward:{chest:'gold'}},{id:'chest3',name:'Magical Chest',desc:'Epic loot!',icon:'✨',price:200,currency:'gems',reward:{chest:'magic'}},{id:'chest4',name:'Giant Chest',desc:'Massive rewards!',icon:'🏆',price:400,currency:'gems',reward:{chest:'giant'}},{id:'chest5',name:'Legendary Chest',desc:'Guaranteed legendary!',icon:'👑',price:800,currency:'gems',reward:{chest:'legendary'},special:true},{id:'chest6',name:'Super Chest',desc:'Ultimate rewards!',icon:'💎',price:1500,currency:'gems',reward:{chest:'super'},special:true},{id:'common1',name:'Common Shards',desc:'Random +10',icon:'🤍',price:100,currency:'gold',reward:{shards:{rarity:'common',amount:10}}},{id:'common2',name:'Common Bundle',desc:'Random +50',icon:'🤍',price:400,currency:'gold',reward:{shards:{rarity:'common',amount:50}}},{id:'rare1',name:'Rare Shards',desc:'Random +8',icon:'🧡',price:400,currency:'gold',reward:{shards:{rarity:'rare',amount:8}}},{id:'rare2',name:'Rare Bundle',desc:'Random +30',icon:'🧡',price:1200,currency:'gold',reward:{shards:{rarity:'rare',amount:30}}},{id:'epic1',name:'Epic Shards',desc:'Random +5',icon:'💜',price:1500,currency:'gold',reward:{shards:{rarity:'epic',amount:5}}},{id:'epic2',name:'Epic Bundle',desc:'Random +20',icon:'💜',price:5000,currency:'gold',reward:{shards:{rarity:'epic',amount:20}}},{id:'legendary1',name:'Legendary Shards',desc:'Random +3',icon:'❤️',price:300,currency:'gems',reward:{shards:{rarity:'legendary',amount:3}}},{id:'legendary2',name:'Legendary Bundle',desc:'Random +10',icon:'❤️',price:800,currency:'gems',reward:{shards:{rarity:'legendary',amount:10}},special:true},{id:'champion1',name:'Champion Shards',desc:'Random +2',icon:'💙',price:500,currency:'gems',reward:{shards:{rarity:'champion',amount:2}},special:true},{id:'champion2',name:'Champion Bundle',desc:'Random +8',icon:'💙',price:1500,currency:'gems',reward:{shards:{rarity:'champion',amount:8}},special:true},{id:'megapack',name:'MEGA PACK',desc:'+5000G +50💎 +20 Shards',icon:'🎁',price:400,currency:'gems',reward:{gold:5000,gems:50,shards:{rarity:'random',amount:20}},special:true},{id:'ultrapack',name:'ULTRA PACK',desc:'+20000G +200💎 +50 Shards',icon:'🎊',price:1500,currency:'gems',reward:{gold:20000,gems:200,shards:{rarity:'random',amount:50}},special:true},{id:'wild',name:'Wild Card',desc:'Upgrade any card of your choice!',icon:'🎴',price:1000,currency:'gems',reward:{wild:1},special:true},{id:'book',name:'Book of Cards',desc:'Upgrade any card of your choice!',icon:'📖',price:5000,currency:'gems',reward:{book:1},special:true},{id:'crystals1',name:'Crystal Pack',desc:'100 Crystals',icon:'💠',price:500,currency:'gems',reward:{crystals:100}},{id:'crystals2',name:'Crystal Vault',desc:'500 Crystals',icon:'💠',price:2000,currency:'gems',reward:{crystals:500}},{id:'crystals3',name:'Crystal Treasury',desc:'2000 Crystals',icon:'💠',price:7000,currency:'gems',reward:{crystals:2000},special:true},{id:'emote1',name:'Extra Emotes',desc:'Unlock funny emotes',icon:'😜',price:50,currency:'crystals',reward:{emotes:['🤣','😜','🤪','😏','😒']}},{id:'emote2',name:'Pro Emotes',desc:'Unlock pro emotes',icon:'😈',price:100,currency:'crystals',reward:{emotes:['💪','🎯','⭐','🏆','💥']}},{id:'megaupgrade',name:'Mega Upgrade',desc:'Upgrade all cards by 1 level!',icon:'⬆️',price:10000,currency:'crystals',reward:{megaupgrade:1}},{id:'trophyboost',name:'Trophy Boost',desc:'+1000 Trophies',icon:'🏆',price:200,currency:'gems',reward:{trophies:1000}},{id:'starterpack',name:'Starter Pack',desc:'+2000G +100💎 +50💠',icon:'⭐',price:100,currency:'gems',reward:{gold:2000,gems:100,crystals:50},special:true},{id:'dailydeal',name:'Daily Deal',desc:'+500G +25💎 +Chest',icon:'🌟',price:25,currency:'gems',reward:{gold:500,gems:25,chest:'silver'}}];
 
-function getUpgradeCost(level,rarity){const base={common:10,rare:20,epic:40,legendary:80,champion:150};return Math.floor((base[rarity]||10)*(level*1.5));}
+function getUpgradeCost(level,rarity){const base={common:13,rare:26,epic:52,legendary:104,champion:195};return Math.floor((base[rarity]||13)*(level*1.5));}
 function getUpgradeGemCost(level,rarity){const base={common:5,rare:10,epic:20,legendary:40,champion:75};return Math.floor((base[rarity]||5)*(level*1.2));}
 
 let P={name:'Player',deck:[],tr:0,gold:5000,gems:50,crystals:0,emotes:[...EMOTES],wins:0,losses:0,streak:0,maxStr:0,crowns:0,lvls:{},shards:{},unlocked:[...STARTER_CARDS],chests:Array(MAX_CHESTS).fill(null),lbBots:[],lastLbUpdate:0,roadClaimed:[],trophyGainPerWin:150,kingTowerLevel:1,princessLevel:1,compWins:0,compLosses:0,compTrophies:0,compBots:[],compLastUpdate:0,unlockedEmotes:[],equippedEmotes:['e1','e2','e3','e4'],unlockedTowerSkins:[],equippedTowerSkin:'tower_default',starPoints:0,favorites:[],bpLevel:1,bpXp:0,bpPremium:false,bpClaimed:[],crownChestProgress:0,battleLog:[],clan:null,lastDaily:null};
@@ -1665,7 +1689,7 @@ function closePvpModals(){
   modals.forEach(id=>{const m=document.getElementById(id);if(m)m.remove();});
 }
 
-function goTab(t){document.querySelectorAll('.tab').forEach(el=>el.classList.remove('on'));document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('on'));document.getElementById('tab'+t).classList.add('on');const idx=['Play','Cards','Chests','Shop','Road','Leaderboard','Stats','Arena'].indexOf(t);if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('on');if(t==='Play')updatePlay();if(t==='Cards')updateCards(),updateKingTowerUI();if(t==='Chests')updateChests();if(t==='Shop')updateShop();if(t==='Road')updateRoad();if(t==='Leaderboard')updateLeaderboard();if(t==='Stats')updateStats();if(t==='Arena')updateArena();if(t==='Titles')updateTitlesTab();if(t==='MedalsLB')updateMedalsLB();}
+function goTab(t){document.querySelectorAll('.tab').forEach(el=>el.classList.remove('on'));document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('on'));document.getElementById('tab'+t).classList.add('on');const idx=['Play','Cards','Chests','Road','Leaderboard','Stats','Arena'].indexOf(t);if(idx>=0)document.querySelectorAll('.nav-btn')[idx].classList.add('on');if(t==='Play')updatePlay();if(t==='Cards')updateCards(),updateKingTowerUI();if(t==='Chests')updateChests();if(t==='Road')updateRoad();if(t==='Leaderboard')updateLeaderboard();if(t==='Stats')updateStats();if(t==='Arena')updateArena();if(t==='Titles')updateTitlesTab();if(t==='MedalsLB')updateMedalsLB();}
 
 function updatePlay(){const a=getArena(P.tr);document.getElementById('dispTr').textContent=P.tr.toLocaleString();document.getElementById('dispArena').textContent=a.icon+' '+a.name;document.getElementById('dispW').textContent=P.wins;document.getElementById('dispL').textContent=P.losses;document.getElementById('dispC').textContent=P.crowns;const btn=document.getElementById('battleBtn'),badge=document.getElementById('rankedBadge');if(isRanked()){btn.className='battle-btn ranked';btn.innerHTML='🔥 RANKED BATTLE!';badge.style.display='inline-block';}else{btn.className='battle-btn';btn.innerHTML='⚔️ BATTLE!';badge.style.display='none';}}
 
@@ -2623,7 +2647,7 @@ case 'shadow':showDmg(t.x,t.y-12,'👻SHADOW!','#9b59b6');t.el.style.opacity='0.
 case 'storm':showDmg(t.x,t.y-12,'⛈️STORM!','#3498db');B.troops.filter(e=>e.side===enemy&&e.hp>0).slice(0,3).forEach(e=>{e.hp-=300;showDmg(e.x,e.y,'-300','#3498db');});break;
 case 'phoenix':showDmg(t.x,t.y-12,'🔥PHOENIX!','#e74c3c');t.phoenixRevive=true;break;
 case 'cloak':showDmg(t.x,t.y-12,'👑CLOAK!','#f1c40f');t.el.style.opacity='0.2';t.as*=0.5;setTimeout(()=>{if(t.el)t.el.style.opacity='1';t.as*=2;},4000);break;
-case 'summon':showDmg(t.x,t.y-12,'☠️SUMMON!','#95a5a6');const skelCard=getCard('skel');if(skelCard){const summonedUnits=[];const halfDmgSkel={...skelCard,dmg:Math.floor(skelCard.dmg/2),cnt:1};for(let i=0;i<85;i++){const angle=(i/85)*Math.PI*2;const radius=50+Math.floor(i/28)*25;const sx=t.x+Math.cos(angle)*radius;const sy=t.y+Math.sin(angle)*radius;const skel=spawnTroop({...halfDmgSkel},sx,sy,t.side,t.lane);if(skel)summonedUnits.push(skel);}const queenHp=Math.floor(t.maxHp/2);const queen=spawnTroop({id:'skelqueen',name:'Skeleton Queen',hp:queenHp,dmg:150,spd:1.2,rng:1,as:1.3,type:'troop',icon:'👸💀',cnt:1},t.x,t.y+40,t.side,t.lane);if(queen){queen.hitCount=0;queen.isSkeletonQueen=true;summonedUnits.push(queen);}setTimeout(()=>{summonedUnits.forEach(s=>{if(s&&s.hp>0){s.hp=0;if(s.el)s.el.remove();}});},10000);}break;
+case 'summon':showDmg(t.x,t.y-12,'☠️SUMMON!','#95a5a6');const skelCard=getCard('skel');if(skelCard){const summonedUnits=[];const halfDmgSkel={...skelCard,dmg:Math.floor(skelCard.dmg/2),cnt:1};for(let i=0;i<85;i++){const angle=(i/85)*Math.PI*2;const radius=50+Math.floor(i/28)*25;const sx=t.x+Math.cos(angle)*radius;const sy=t.y+Math.sin(angle)*radius;const skel=spawnTroop({...halfDmgSkel},sx,sy,t.side,t.lane);if(skel)summonedUnits.push(skel);}const queenHp=Math.floor(t.maxHp/2);const queen=spawnTroop({id:'skelqueen',name:'Skeleton Queen',hp:queenHp,dmg:150,spd:1.2,rng:1,as:1.3,type:'troop',icon:'👸💀',cnt:1},t.x,t.y+40,t.side,t.lane);if(queen){queen.hitCount=0;queen.isSkeletonQueen=true;summonedUnits.push(queen);}setTimeout(()=>{summonedUnits.forEach(s=>{if(s&&s.hp>0){s.hp=0;if(s.el)s.el.remove();}});},15000);}break;
 case 'multistrike':showDmg(t.x,t.y-12,'⚔️MULTI!','#e67e22');t.as*=0.3;setTimeout(()=>t.as/=0.3,2000);break;
 case 'earthquake':showDmg(t.x,t.y-12,'🗿QUAKE!','#8b4513');B.troops.forEach(e=>{if(e.side===enemy&&e.hp>0){const d=Math.sqrt((e.x-t.x)**2+(e.y-t.y)**2);if(d<80){e.hp-=400;showDmg(e.x,e.y,'-400','#8b4513');}}});break;
 case 'blizzard':showDmg(t.x,t.y-12,'❄️FREEZE!','#00ffff');B.troops.forEach(e=>{if(e.side===enemy&&e.hp>0)e.stun=3;});break;
@@ -3444,8 +3468,8 @@ P.royalWildCards-=10;
 P.shards[card.id]=(P.shards[card.id]||0)+shards;
 P.workshopStats.forges++;
 // Check if card should be unlocked
-const reqShards={common:10,rare:20,epic:30,legendary:40,champion:50,evolution:50};
-if(!P.unlocked.includes(card.id)&&P.shards[card.id]>=(reqShards[card.rarity]||10)){
+const reqShards={common:13,rare:26,epic:39,legendary:52,champion:65,evolution:65};
+if(!P.unlocked.includes(card.id)&&P.shards[card.id]>=(reqShards[card.rarity]||13)){
 P.unlocked.push(card.id);
 P.cardLvl[card.id]=1;
 }
@@ -3474,8 +3498,8 @@ const shardAmounts={common:15,rare:12,epic:8,legendary:5,champion:3};
 const shards=shardAmounts[rarity]||10;
 P.shards[card.id]=(P.shards[card.id]||0)+shards;
 // Check if card should be unlocked
-const reqShards={common:10,rare:20,epic:30,legendary:40,champion:50};
-if(!P.unlocked.includes(card.id)&&P.shards[card.id]>=(reqShards[card.rarity]||10)){
+const reqShards={common:13,rare:26,epic:39,legendary:52,champion:65};
+if(!P.unlocked.includes(card.id)&&P.shards[card.id]>=(reqShards[card.rarity]||13)){
 P.unlocked.push(card.id);
 P.cardLvl[card.id]=1;
 }
@@ -3559,8 +3583,8 @@ P.shards[selectedTransmuteFrom]-=20;
 P.shards[toCard.id]=(P.shards[toCard.id]||0)+10;
 P.workshopStats.transmutes++;
 // Check if card should be unlocked
-const reqShards={common:10,rare:20,epic:30,legendary:40,champion:50,evolution:50};
-if(!P.unlocked.includes(toCard.id)&&P.shards[toCard.id]>=(reqShards[toCard.rarity]||10)){
+const reqShards={common:13,rare:26,epic:39,legendary:52,champion:65,evolution:65};
+if(!P.unlocked.includes(toCard.id)&&P.shards[toCard.id]>=(reqShards[toCard.rarity]||13)){
 P.unlocked.push(toCard.id);
 P.cardLvl[toCard.id]=1;
 }
@@ -5696,14 +5720,13 @@ document.querySelectorAll('.tab').forEach(el=>el.classList.remove('on'));
 document.querySelectorAll('.nav-btn').forEach(el=>el.classList.remove('on'));
 const tab=document.getElementById('tab'+t);
 if(tab)tab.classList.add('on');
-const tabs=['Play','Cards','Clan','Pass','Shop','Chests','Log','Stats'];
+const tabs=['Play','Cards','Clan','Pass','Chests','Log','Stats'];
 const idx=tabs.indexOf(t);
 if(idx>=0)document.querySelectorAll('.nav-btn')[idx]?.classList.add('on');
 try{
 if(t==='Play'){updatePlay();updateMedalsStats();updateSpinWheel();}
 if(t==='Cards'){updateCards();updateKingTowerUI();updatePrincessUI();}
 if(t==='Chests')updateChests();
-if(t==='Shop')updateShop();
 if(t==='Wild')updateWild();
 if(t==='Daily'){updateDaily();updateWeeklyQuests();}
 if(t==='Leaderboard'){updateLeaderboard();updateCompetitive();}
