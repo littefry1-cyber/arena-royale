@@ -5,7 +5,7 @@
   "is_guest": false,
   "admin": false,
   "created_at": 1767291771.729209,
-  "updated_at": 1767389836.889748,
+  "updated_at": 1767473174.844756,
   "last_login": 1767389553.855769,
   "profile": {
     "name": "testacct2",
@@ -13,10 +13,10 @@
     "tower_skin": "default"
   },
   "stats": {
-    "trophies": 1,
+    "trophies": 0,
     "elo": 1000,
     "wins": 0,
-    "losses": 0,
+    "losses": 1,
     "crowns": 0,
     "max_streak": 0,
     "current_streak": 0,
@@ -33,7 +33,8 @@
     "gold": 4535,
     "gems": 31231,
     "crystals": 4213,
-    "star_points": 4234
+    "star_points": 4234,
+    "cash_balance": 0
   },
   "cards": {
     "unlocked": [
@@ -83,5 +84,6 @@
     "claimed": []
   },
   "battle_log": [],
-  "discount": 99
+  "discount": 99,
+  "gold": 10
 }

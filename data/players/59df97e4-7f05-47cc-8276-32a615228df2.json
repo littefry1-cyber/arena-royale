@@ -5,7 +5,7 @@
   "is_guest": false,
   "admin": true,
   "created_at": 1767228684.318677,
-  "updated_at": 1767389836.892254,
+  "updated_at": 1767473174.937148,
   "last_login": 1767387109.022658,
   "profile": {
     "name": "jobit",
@@ -13,12 +13,12 @@
     "tower_skin": "default"
   },
   "stats": {
-    "trophies": 2135,
+    "trophies": 2930,
     "elo": 1000,
-    "wins": 58,
+    "wins": 64,
     "losses": 33,
-    "crowns": 174,
-    "max_streak": 5,
+    "crowns": 192,
+    "max_streak": 10,
     "current_streak": 0,
     "medals": 0,
     "medals_wins": 0,
@@ -32,7 +32,8 @@
     "gold": 9557780,
     "gems": 42106,
     "crystals": 0,
-    "star_points": 30
+    "star_points": 30,
+    "cash_balance": 0
   },
   "cards": {
     "unlocked": [
@@ -171,10 +172,11 @@
     "levels": {
       "archer": 30,
       "barbarian": 15,
-      "skeletonking": 7,
-      "giant": 15,
+      "skeletonking": 15,
+      "giant": 19,
       "minion": 15,
-      "knight": 26
+      "knight": 26,
+      "hog": 15
     },
     "shards": {
       "archer": 270,
@@ -194,9 +196,9 @@
       "minion": 3625,
       "firespirit": 5200,
       "shieldmaiden": 5200,
-      "giant": 2050,
+      "giant": 70,
       "musk": 5200,
-      "valk": 5200,
+      "valk": 5215,
       "hog": 5200,
       "speargob": 5200,
       "bomber2": 5200,
@@ -353,5 +355,5 @@
     "claimed": []
   },
   "battle_log": [],
-  "gold": 685
+  "gold": 795
 }
