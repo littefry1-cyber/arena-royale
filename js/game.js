@@ -405,6 +405,7 @@ const NET = {
       P.gems = serverPlayer.resources.gems || 0;
       P.crystals = serverPlayer.resources.crystals || 0;
       P.starPoints = serverPlayer.resources.star_points || 0;
+      P.cashBalance = serverPlayer.resources.cash_balance || 0;
     }
     if (serverPlayer.cards) {
       if (serverPlayer.cards.unlocked) P.unlocked = serverPlayer.cards.unlocked;
@@ -460,6 +461,7 @@ const NET = {
           gems: P.gems || 0,
           crystals: P.crystals || 0,
           star_points: P.starPoints || 0,
+          cash_balance: P.cashBalance || 0,
         },
         cards: {
           unlocked: P.unlocked || [],
